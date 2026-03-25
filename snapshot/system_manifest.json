@@ -1,6 +1,6 @@
 {
   "active_theme": "mono-dark",
-  "generated_at": "2026-03-25T07:28:05+00:00",
+  "generated_at": "2026-03-25T11:18:01+00:00",
   "home_repo": {
     "branch": "main",
     "remote_url": "https://github.com/ryangerardwilson/templar_desktop.git"
@@ -546,16 +546,7 @@
         "remote_url": "https://github.com/ryangerardwilson/xyz.git"
       }
     ],
-    "Libs": [
-      {
-        "branch": "main",
-        "has_install_script": false,
-        "install_via_script": false,
-        "name": "rgw_cli_contract",
-        "relative_path": "Libs/rgw_cli_contract",
-        "remote_url": "https://github.com/ryangerardwilson/templar_desktop.git"
-      }
-    ],
+    "Libs": [],
     "Work": [
       {
         "branch": "main",
@@ -577,14 +568,6 @@
         "branch": "main",
         "has_install_script": false,
         "install_via_script": false,
-        "name": "daniel-fast",
-        "relative_path": "Work/daniel-fast",
-        "remote_url": "https://github.com/ryangerardwilson/templar_desktop.git"
-      },
-      {
-        "branch": "main",
-        "has_install_script": false,
-        "install_via_script": false,
         "name": "daniel_fast",
         "relative_path": "Work/daniel_fast",
         "remote_url": "https://github.com/ryangerardwilson/daniel_fast.git"
@@ -596,14 +579,6 @@
         "name": "tenebrae",
         "relative_path": "Work/tenebrae",
         "remote_url": "https://github.com/ryangerardwilson/tenebrae.git"
-      },
-      {
-        "branch": "main",
-        "has_install_script": false,
-        "install_via_script": false,
-        "name": "tries",
-        "relative_path": "Work/tries",
-        "remote_url": "https://github.com/ryangerardwilson/templar_desktop.git"
       },
       {
         "branch": "main",
