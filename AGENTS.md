@@ -24,6 +24,8 @@
 ## Install / Upgrade Deviation
 - This repo is private on GitHub.
 - Keep the launcher contract (`-h`, `-v`, `-u`) but use authenticated GitHub CLI release downloads in `install.sh` instead of anonymous public `curl` URLs.
+- Never hardcode a GitHub PAT into the repo, installer, or release artifact.
+- If private-release auth needs to be hands-off on a machine, use user-local auth such as `gh auth login`, `GH_TOKEN`, or a local token file outside the repo.
 - Preserve `./push_release_upgrade.sh` and the tagged release workflow so upgrades stay reproducible across laptops.
 
 ## Service Rules

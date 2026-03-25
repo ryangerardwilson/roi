@@ -23,6 +23,22 @@ cd ~/Apps/rgw_omarchy_installer
 
 That installs the public launcher at `~/.local/bin/rgw_omarchy_installer` and enables the user sync service by default.
 
+Local source install via `./install.sh -b .` needs:
+
+- `python3`
+- optional `systemctl --user` if you want the service installed automatically
+
+Private release install or upgrade via `install.sh -v` or `install.sh -u` needs:
+
+- `python3`
+- `gh`
+- one of:
+  - an active `gh auth login`
+  - `GH_TOKEN` or `GITHUB_TOKEN` in the environment
+  - a local token file at `~/.config/rgw_omarchy_installer/github_token`
+
+The token file is local machine state. Keep it out of the repo and lock it down to your user.
+
 If `~/.local/bin` is not already on `PATH`, add this line to `~/.bashrc`:
 
 ```bash

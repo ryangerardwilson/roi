@@ -39,6 +39,9 @@ class InstallContractTests(unittest.TestCase):
             self._write_executable(
                 bin_dir / "gh",
                 "#!/usr/bin/bash\n"
+                "if [[ \"$*\" == \"auth status\" ]]; then\n"
+                "  exit 0\n"
+                "fi\n"
                 "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
                 "  printf 'v0.1.21\\n'\n"
                 "  exit 0\n"
@@ -62,6 +65,9 @@ class InstallContractTests(unittest.TestCase):
             self._write_executable(
                 bin_dir / "gh",
                 "#!/usr/bin/bash\n"
+                "if [[ \"$*\" == \"auth status\" ]]; then\n"
+                "  exit 0\n"
+                "fi\n"
                 "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
                 "  printf 'v0.1.21\\n'\n"
                 "  exit 0\n"
@@ -117,6 +123,37 @@ class InstallContractTests(unittest.TestCase):
             )
             self.assertEqual(version.stdout.strip(), '0.0.0')
             self.assertIn(f"Manually add to ~/.bashrc if needed: export PATH={public_launcher.parent}:$PATH", result.stdout)
+
+    def test_dash_v_uses_local_token_file_when_present(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            bin_dir = tmp_path / "bin"
+            home_dir = tmp_path / "home"
+            token_dir = home_dir / ".config" / "rgw_omarchy_installer"
+            token_file = token_dir / "github_token"
+            bin_dir.mkdir()
+            token_dir.mkdir(parents=True)
+            home_dir.mkdir(exist_ok=True)
+            token_file.write_text("ghp_test_token\n", encoding="utf-8")
+
+            self._write_executable(
+                bin_dir / "gh",
+                "#!/usr/bin/bash\n"
+                "if [[ \"$GH_TOKEN\" != \"ghp_test_token\" ]]; then\n"
+                "  echo missing token >&2\n"
+                "  exit 1\n"
+                "fi\n"
+                "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
+                "  printf 'v0.1.22\\n'\n"
+                "  exit 0\n"
+                "fi\n"
+                "echo unexpected gh call >&2\n"
+                "exit 1\n",
+            )
+
+            result = self._run_installer(home_dir, "-v", path_prefix=bin_dir)
+
+            self.assertEqual(result.stdout.strip(), "0.1.22")
 
 
 if __name__ == "__main__":

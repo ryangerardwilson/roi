@@ -11,6 +11,7 @@ VENV_DIR="$APP_HOME/venv"
 FILENAME="rgw_omarchy_installer-linux-x64.tar.gz"
 PUBLIC_BIN_DIR="$HOME/.local/bin"
 PUBLIC_LAUNCHER="$PUBLIC_BIN_DIR/${APP}"
+TOKEN_FILE_DEFAULT="$HOME/.config/${APP}/github_token"
 
 
 usage() {
@@ -50,6 +51,24 @@ print_message() {
 die() {
   print_message error "$1"
   exit 1
+}
+
+configure_github_auth() {
+  if [[ -n "${GH_TOKEN:-}" || -n "${GITHUB_TOKEN:-}" ]]; then
+    return 0
+  fi
+
+  local token_file="${RGW_OMARCHY_INSTALLER_GITHUB_TOKEN_FILE:-$TOKEN_FILE_DEFAULT}"
+  if [[ -f "$token_file" ]]; then
+    local token
+    token="$(tr -d '\r\n' < "$token_file")"
+    [[ -n "$token" ]] || die "GitHub token file is empty: $token_file"
+    export GH_TOKEN="$token"
+    return 0
+  fi
+
+  gh auth status >/dev/null 2>&1 && return 0
+  die "Private release access requires one of: GH_TOKEN/GITHUB_TOKEN, $token_file, or an active 'gh auth login'."
 }
 
 installed_command_path() {
@@ -98,10 +117,11 @@ extract_source() {
 
 get_latest_version() {
   command -v gh >/dev/null 2>&1 || die "'gh' is required to access private releases."
+  configure_github_auth
   if [[ -z "$latest_version_cache" ]]; then
     local tag
     tag="$(gh api "repos/${REPO}/releases/latest" --jq '.tag_name' 2>/dev/null)" \
-      || die "Unable to determine latest release. Run 'gh auth status' and ensure the private repo is accessible."
+      || die "Unable to determine latest release. Ensure the private repo is accessible through GH_TOKEN, ${TOKEN_FILE_DEFAULT}, or 'gh auth login'."
     tag="${tag#v}"
     [[ -n "$tag" && "$tag" != "latest" ]] || die "Unable to determine latest release"
     latest_version_cache="$tag"
@@ -229,6 +249,7 @@ if [[ -n "$binary_path" ]]; then
   specific_version="local"
 else
   command -v gh >/dev/null 2>&1 || { print_message error "'gh' is required to access private releases."; exit 1; }
+  configure_github_auth
 
   if [[ -z "$requested_version" ]]; then
     specific_version="$(get_latest_version)"
