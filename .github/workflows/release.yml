@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set version env
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+
+      - name: Build release bundle
+        run: |
+          set -euo pipefail
+          mkdir -p dist/rgw_omarchy_installer/assets dist/rgw_omarchy_installer/snapshot
+          cp AGENTS.md README.md _version.py config.py engine.py main.py manifest.py service.py install.sh requirements.txt dist/rgw_omarchy_installer/
+          cp assets/default_config.toml assets/rgw_omarchy_installer.service.tpl dist/rgw_omarchy_installer/assets/
+          cp snapshot/system_manifest.json dist/rgw_omarchy_installer/snapshot/
+          printf '__version__ = "%s"\n' "${VERSION}" > dist/rgw_omarchy_installer/_version.py
+          tar -C dist -czf rgw_omarchy_installer-linux-x64.tar.gz rgw_omarchy_installer
+
+      - name: Create release and upload asset
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG }}
+          files: |
+            rgw_omarchy_installer-linux-x64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

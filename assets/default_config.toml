@@ -1,0 +1,9 @@
+[daemon]
+mode = "source"
+poll_seconds = 300
+auto_commit = true
+auto_push = true
+auto_apply = true
+
+[paths]
+repo_root = "$HOME/Apps/rgw_omarchy_installer"
