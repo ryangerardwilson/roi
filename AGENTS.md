@@ -32,3 +32,4 @@
 - The user service exists to run repeated sync cycles, not to hide errors.
 - Keep source mode conservative: refresh the manifest, then auto-commit only when the worktree is clean apart from the snapshot file.
 - Keep follower mode conservative: pull the installer repo and apply only when the snapshot digest changes.
+- For this machine's once-daily sync automation, prefer a `systemd --user` timer via `./setup_daily_sync_timer.sh` over `crontab`, because `systemd` is the scheduler that is already available here.

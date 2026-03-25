@@ -103,3 +103,15 @@ This app still ships the normal release path:
 Release precondition: this directory must live in its own git repo rooted at `~/Apps/rgw_omarchy_installer` with `origin` set to `ryangerardwilson/rgw_omarchy_installer`.
 
 When that repo exists privately on GitHub, `install.sh` uses authenticated GitHub CLI release downloads instead of anonymous public release URLs.
+
+## Daily Sync
+
+This machine uses `systemd --user` rather than `crontab`.
+
+To install a once-daily source-mode sync that runs `tick`, use:
+
+```bash
+./setup_daily_sync_timer.sh
+```
+
+The runner script prefers the installed `rgw_omarchy_installer` launcher and falls back to the repo checkout when needed.
