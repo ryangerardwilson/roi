@@ -20,6 +20,47 @@
 - Treat that manifest as the cross-laptop source of truth for apply operations.
 - Source-mode daemon work may auto-commit and push only the snapshot file.
 - If the repo has unrelated local changes, skip auto-commit and auto-push instead of folding those changes into daemon commits.
+- When the user asks to "update the app with my latest work state", the default meaning is:
+  - refresh `snapshot/system_manifest.json` from this machine
+  - review the snapshot diff
+  - commit and push the snapshot only if the user asked for the repo to be updated or pushed
+
+## Current Machine Context
+- The installer repo itself lives at `~/Apps/rgw_omarchy_installer`.
+- The installer repo remote should be `https://github.com/ryangerardwilson/rgw_omarchy_installer.git`.
+- The home repo being captured is the git repo rooted at `~`.
+- The default config path is `~/.config/rgw_omarchy_installer/config.toml`.
+- The default `paths.repo_root` is `~/Apps/rgw_omarchy_installer`.
+- The app is normally run in `source` mode on the source laptop when refreshing the checked-in snapshot.
+
+## Latest Work State Refresh Playbook
+- If the user asks to refresh or update the installer with the latest workstation state, prefer this sequence:
+  1. run `python3 main.py snap` from the repo root, or `rgw_omarchy_installer snap` if the installed launcher is already available
+  2. inspect `git diff -- snapshot/system_manifest.json`
+  3. verify that the diff reflects real workstation changes rather than accidental repo-shape drift
+  4. if the user asked to push, commit only `snapshot/system_manifest.json` and push
+- Prefer `snap` for an explicit operator-driven refresh.
+- Use `tick` only when you intentionally want source-mode daemon behavior, including the repo self-pull and opportunistic auto-commit path.
+- Do not assume a refresh should be pushed unless the user explicitly asks for that outcome.
+- If the repo has unrelated changes, do not mix them into a snapshot update commit.
+
+## Snapshot Review Rules
+- The managed snapshot should reflect:
+  - the home repo rooted at `~`
+  - the six repo-backed Omarchy themes plus the active theme
+  - required top-level directories
+  - repo inventories under `~/Apps`, `~/Libs`, and `~/Work`
+  - explicitly installed packages
+- Only true git repo roots under `~/Apps`, `~/Libs`, and `~/Work` belong in the repo inventory.
+- Do not treat directories that merely live inside the home repo worktree as standalone repos.
+- When reviewing repo inventory diffs, prefer the current real directory names and remotes on disk over stale remembered names.
+- Theme changes should follow the Omarchy theme workflow: canonical repo state first, then the manifest refresh.
+
+## Push Rules
+- For a pure work-state refresh, the preferred commit scope is `snapshot/system_manifest.json` only.
+- If code or docs also changed as part of the task, keep those changes in a separate commit unless the user explicitly wants them bundled.
+- If the user asks to "push the repo", push the current branch after verifying the snapshot diff and commit scope.
+- Only use `./push_release_upgrade.sh` when the user explicitly wants the shipped release path, not for ordinary snapshot refreshes.
 
 ## Install / Upgrade Deviation
 - This repo is private on GitHub.
@@ -32,3 +73,4 @@
 - The user service exists to run repeated sync cycles, not to hide errors.
 - Keep source mode conservative: refresh the manifest, then auto-commit only when the worktree is clean apart from the snapshot file.
 - Keep follower mode conservative: pull the installer repo and apply only when the snapshot digest changes.
+- On a fresh machine, `apply` is allowed to bootstrap GitHub auth through `gh auth login --web`, sync the home repo, source `~/.bashrc`, and then continue the remaining apply steps.
