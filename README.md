@@ -39,6 +39,8 @@ Private release install or upgrade via `install.sh -v` or `install.sh -u` needs:
 
 The token file is local machine state. Keep it out of the repo and lock it down to your user.
 
+If none of those auth paths are present, the installer starts `gh auth login --web` automatically.
+
 If `~/.local/bin` is not already on `PATH`, add this line to `~/.bashrc`:
 
 ```bash
@@ -73,6 +75,12 @@ The user config lives at `~/.config/rgw_omarchy_installer/config.toml`.
 
 - pulls the configured installer repo when `paths.repo_root` points at a real git checkout
 - applies the saved snapshot only when its digest changes
+
+First bootstrap flow on a new machine:
+
+1. start GitHub web auth through `gh` when needed
+2. sync the home repo at `~`
+3. source `~/.bashrc` from the freshly synced home repo for the remaining apply steps
 
 ## Apply Order
 

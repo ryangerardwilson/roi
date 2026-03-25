@@ -55,6 +55,7 @@ die() {
 
 configure_github_auth() {
   if [[ -n "${GH_TOKEN:-}" || -n "${GITHUB_TOKEN:-}" ]]; then
+    gh auth setup-git >/dev/null 2>&1 || true
     return 0
   fi
 
@@ -64,11 +65,19 @@ configure_github_auth() {
     token="$(tr -d '\r\n' < "$token_file")"
     [[ -n "$token" ]] || die "GitHub token file is empty: $token_file"
     export GH_TOKEN="$token"
+    gh auth setup-git >/dev/null 2>&1 || true
     return 0
   fi
 
-  gh auth status >/dev/null 2>&1 && return 0
-  die "Private release access requires one of: GH_TOKEN/GITHUB_TOKEN, $token_file, or an active 'gh auth login'."
+  if gh auth status >/dev/null 2>&1; then
+    gh auth setup-git >/dev/null 2>&1 || true
+    return 0
+  fi
+
+  print_message info "Starting GitHub web login..."
+  gh auth login --web --git-protocol https --skip-ssh-key >/dev/null \
+    || die "GitHub web login failed."
+  gh auth setup-git >/dev/null 2>&1 || true
 }
 
 installed_command_path() {

@@ -1,6 +1,6 @@
 {
   "active_theme": "mono-dark",
-  "generated_at": "2026-03-25T07:23:03+00:00",
+  "generated_at": "2026-03-25T07:28:05+00:00",
   "home_repo": {
     "branch": "main",
     "remote_url": "https://github.com/ryangerardwilson/templar_desktop.git"
@@ -471,7 +471,7 @@
         "install_via_script": false,
         "name": "rgw_omarchy_installer",
         "relative_path": "Apps/rgw_omarchy_installer",
-        "remote_url": "https://github.com/ryangerardwilson/templar_desktop.git"
+        "remote_url": "https://github.com/ryangerardwilson/rgw_omarchy_installer.git"
       },
       {
         "branch": "main",

@@ -155,6 +155,44 @@ class InstallContractTests(unittest.TestCase):
 
             self.assertEqual(result.stdout.strip(), "0.1.22")
 
+    def test_dash_v_starts_web_login_when_no_auth_exists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            bin_dir = tmp_path / "bin"
+            home_dir = tmp_path / "home"
+            state_dir = tmp_path / "state"
+            bin_dir.mkdir()
+            home_dir.mkdir()
+            state_dir.mkdir()
+
+            self._write_executable(
+                bin_dir / "gh",
+                "#!/usr/bin/bash\n"
+                f"state_dir={state_dir}\n"
+                "if [[ \"$*\" == \"auth status\" ]]; then\n"
+                "  [[ -f \"$state_dir/authed\" ]] && exit 0\n"
+                "  exit 1\n"
+                "fi\n"
+                "if [[ \"$*\" == \"auth login --web --git-protocol https --skip-ssh-key\" ]]; then\n"
+                "  touch \"$state_dir/authed\"\n"
+                "  exit 0\n"
+                "fi\n"
+                "if [[ \"$*\" == \"auth setup-git\" ]]; then\n"
+                "  exit 0\n"
+                "fi\n"
+                "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
+                "  printf 'v0.1.23\\n'\n"
+                "  exit 0\n"
+                "fi\n"
+                "echo unexpected gh call >&2\n"
+                "exit 1\n",
+            )
+
+            result = self._run_installer(home_dir, "-v", path_prefix=bin_dir)
+
+            self.assertEqual(result.stdout.strip().splitlines()[-1], "0.1.23")
+            self.assertTrue((state_dir / "authed").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
