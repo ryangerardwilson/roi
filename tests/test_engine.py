@@ -28,13 +28,14 @@ class EngineBootstrapTests(unittest.TestCase):
             mock.patch("engine._ensure_required_dirs", side_effect=lambda *args, **kwargs: events.append("dirs")) as ensure_dirs,
             mock.patch("engine._sync_repo_group", side_effect=lambda *args, **kwargs: events.append(f"repo:{args[2]}")) as sync_repo_group,
             mock.patch("engine._sync_packages", side_effect=lambda *args, **kwargs: events.append("packages")) as sync_packages,
+            mock.patch("engine._sync_mise", side_effect=lambda *args, **kwargs: events.append("mise")) as sync_mise,
             mock.patch("engine._apply_keyd_km_special_cases", side_effect=lambda *args, **kwargs: events.append("special")) as apply_specials,
         ):
             engine.apply_manifest(manifest, home_dir)
 
         self.assertEqual(
             events,
-            ["auth", "home", "env", "dirs", "packages", "themes", "repo:Apps", "repo:Libs", "repo:Work", "special"],
+            ["auth", "home", "env", "dirs", "packages", "mise", "themes", "repo:Apps", "repo:Libs", "repo:Work", "special"],
         )
         install_themes.assert_called_once_with(manifest, home_dir, env=runtime_env)
         ensure_dirs.assert_called_once_with(manifest, home_dir)
@@ -43,6 +44,7 @@ class EngineBootstrapTests(unittest.TestCase):
         sync_repo_group.assert_any_call(manifest, home_dir, "Libs", env=runtime_env)
         sync_repo_group.assert_any_call(manifest, home_dir, "Work", env=runtime_env)
         sync_packages.assert_called_once_with(manifest, env=runtime_env)
+        sync_mise.assert_called_once_with(manifest, env=runtime_env)
         apply_specials.assert_called_once_with(manifest, home_dir, env=runtime_env)
 
     def test_initialize_state_repo_loads_shell_env_and_syncs_remote_state(self):
@@ -164,6 +166,44 @@ class EngineBootstrapTests(unittest.TestCase):
 
         run.assert_any_call(["sudo", "systemctl", "enable", "--now", "keyd.service"], env=env)
         run.assert_any_call([str(home_dir / ".local" / "bin" / "km"), "apply"], env=env)
+
+    def test_sync_mise_installs_tools_and_node_globals(self):
+        manifest = {
+            "mise": {
+                "tools": [
+                    {"name": "node", "version": "25.8.0"},
+                    {"name": "java", "version": "17.0.2"},
+                ],
+                "npm_globals": [
+                    {"name": "@openai/codex", "version": "0.116.0"},
+                    {"name": "vercel", "version": "50.33.1"},
+                ],
+            }
+        }
+        env = {"HOME": "/tmp/test-home"}
+
+        with (
+            mock.patch("engine.shutil.which", return_value="/usr/bin/mise"),
+            mock.patch("engine._run") as run,
+        ):
+            engine._sync_mise(manifest, env=env)
+
+        run.assert_any_call(["/usr/bin/mise", "install", "--yes", "node@25.8.0"], env=env)
+        run.assert_any_call(["/usr/bin/mise", "install", "--yes", "java@17.0.2"], env=env)
+        run.assert_any_call(
+            [
+                "/usr/bin/mise",
+                "exec",
+                "node@25.8.0",
+                "--",
+                "npm",
+                "install",
+                "-g",
+                "@openai/codex@0.116.0",
+                "vercel@50.33.1",
+            ],
+            env=env,
+        )
 
     def test_run_track_once_syncs_remote_state(self):
         config = mock.Mock()

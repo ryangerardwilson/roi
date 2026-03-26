@@ -158,6 +158,60 @@ def discover_packages() -> dict[str, Any]:
     }
 
 
+def discover_mise_state(home_dir: Path) -> dict[str, Any]:
+    if shutil.which("mise") is None:
+        return {"tools": [], "npm_globals": []}
+
+    output = _run_capture(["mise", "ls", "--json"], allow_failure=True)
+    if not output:
+        return {"tools": [], "npm_globals": []}
+    try:
+        payload = json.loads(output)
+    except json.JSONDecodeError as exc:
+        raise ManifestError(f"Invalid JSON from mise ls --json: {exc}") from exc
+
+    tools: list[dict[str, str]] = []
+    for tool_name in sorted(payload):
+        entries = payload.get(tool_name) or []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            version = str(entry.get("version", "")).strip()
+            if not version:
+                continue
+            tools.append({"name": tool_name, "version": version})
+
+    npm_globals: list[dict[str, str]] = []
+    node_entry = next((tool for tool in tools if tool["name"] == "node"), None)
+    if node_entry is None:
+        return {"tools": tools, "npm_globals": npm_globals}
+
+    npm_path = home_dir / ".local" / "share" / "mise" / "installs" / "node" / node_entry["version"] / "bin" / "npm"
+    if not npm_path.exists():
+        return {"tools": tools, "npm_globals": npm_globals}
+
+    npm_output = _run_capture([str(npm_path), "list", "-g", "--depth=0", "--json"], allow_failure=True)
+    if not npm_output:
+        return {"tools": tools, "npm_globals": npm_globals}
+    try:
+        npm_payload = json.loads(npm_output)
+    except json.JSONDecodeError as exc:
+        raise ManifestError(f"Invalid JSON from npm list -g --json: {exc}") from exc
+
+    dependencies = npm_payload.get("dependencies", {})
+    if isinstance(dependencies, dict):
+        for package_name in sorted(dependencies):
+            if package_name == "npm":
+                continue
+            package_meta = dependencies.get(package_name) or {}
+            version = str(package_meta.get("version", "")).strip()
+            if not version:
+                continue
+            npm_globals.append({"name": package_name, "version": version})
+
+    return {"tools": tools, "npm_globals": npm_globals}
+
+
 def capture_manifest(home_dir: Path) -> dict[str, Any]:
     home_repo = _repo_spec(home_dir, ".", install_via_script=False)
     if home_repo is None:
@@ -180,6 +234,7 @@ def capture_manifest(home_dir: Path) -> dict[str, Any]:
             for group in REPO_GROUPS
         },
         "packages": discover_packages(),
+        "mise": discover_mise_state(home_dir),
     }
 
 

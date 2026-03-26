@@ -57,6 +57,12 @@ class ManifestCaptureTests(unittest.TestCase):
             with mock.patch(
                 "manifest.discover_packages",
                 return_value={"manager": "yay", "official": ["git"], "foreign": [], "explicit": ["git"]},
+            ), mock.patch(
+                "manifest.discover_mise_state",
+                return_value={
+                    "tools": [{"name": "node", "version": "25.8.0"}],
+                    "npm_globals": [{"name": "@openai/codex", "version": "0.116.0"}],
+                },
             ):
                 manifest = capture_manifest(home_dir)
 
@@ -69,6 +75,8 @@ class ManifestCaptureTests(unittest.TestCase):
             self_spec = next(spec for spec in manifest["repos"]["Apps"] if spec["name"] == "roi")
             self.assertFalse(self_spec["install_via_script"])
             self.assertEqual(manifest["packages"]["explicit"], ["git"])
+            self.assertEqual(manifest["mise"]["tools"][0]["name"], "node")
+            self.assertEqual(manifest["mise"]["npm_globals"][0]["name"], "@openai/codex")
 
     def test_capture_manifest_ignores_directories_that_only_live_inside_home_repo(self):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -82,6 +90,9 @@ class ManifestCaptureTests(unittest.TestCase):
             with mock.patch(
                 "manifest.discover_packages",
                 return_value={"manager": "yay", "official": ["git"], "foreign": [], "explicit": ["git"]},
+            ), mock.patch(
+                "manifest.discover_mise_state",
+                return_value={"tools": [], "npm_globals": []},
             ):
                 manifest = capture_manifest(home_dir)
 

@@ -250,6 +250,54 @@ def _sync_packages(manifest: dict[str, Any], env: dict[str, str] | None = None) 
     _run(command, env=env)
 
 
+def _sync_mise(manifest: dict[str, Any], env: dict[str, str] | None = None) -> None:
+    mise_state = manifest.get("mise", {})
+    tools = list(mise_state.get("tools", []))
+    npm_globals = list(mise_state.get("npm_globals", []))
+    if not tools and not npm_globals:
+        return
+
+    mise_cmd = shutil.which("mise")
+    if not mise_cmd:
+        raise OperationError("Expected 'mise' to restore mise-managed runtimes.")
+
+    for tool in tools:
+        name = str(tool.get("name", "")).strip()
+        version = str(tool.get("version", "")).strip()
+        if not name or not version:
+            continue
+        print(f"mise {name}@{version}: install")
+        _run([mise_cmd, "install", "--yes", f"{name}@{version}"], env=env)
+
+    if not npm_globals:
+        return
+
+    node_tool = next(
+        (
+            tool
+            for tool in tools
+            if str(tool.get("name", "")).strip() == "node" and str(tool.get("version", "")).strip()
+        ),
+        None,
+    )
+    if node_tool is None:
+        raise OperationError("Manifest includes npm globals but no node mise runtime.")
+
+    packages = []
+    for package in npm_globals:
+        name = str(package.get("name", "")).strip()
+        version = str(package.get("version", "")).strip()
+        if not name or not version:
+            continue
+        packages.append(f"{name}@{version}")
+    if not packages:
+        return
+
+    node_version = str(node_tool.get("version", "")).strip()
+    print("mise node globals: install")
+    _run([mise_cmd, "exec", f"node@{node_version}", "--", "npm", "install", "-g", *packages], env=env)
+
+
 def _manifest_has_package(manifest: dict[str, Any], package_name: str) -> bool:
     packages = manifest.get("packages", {})
     for key in ("explicit", "official", "foreign"):
@@ -287,6 +335,7 @@ def apply_manifest(manifest: dict[str, Any], home_dir: Path) -> None:
     runtime_env = _load_home_shell_env(home_dir)
     _ensure_required_dirs(manifest, home_dir)
     _sync_packages(manifest, env=runtime_env)
+    _sync_mise(manifest, env=runtime_env)
     _install_themes(manifest, home_dir, env=runtime_env)
     for group in ("Apps", "Libs", "Work"):
         _sync_repo_group(manifest, home_dir, group, env=runtime_env)

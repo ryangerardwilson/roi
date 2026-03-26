@@ -9,6 +9,7 @@ The managed state covers:
 - the required top-level directories
 - repo inventories under `~/Apps`, `~/Libs`, and `~/Work`
 - explicitly installed packages
+- installed `mise` runtimes and Node npm globals such as `codex`
 
 Live machine state is stored in a separate private GitHub repo named `roi_state`.
 
@@ -103,7 +104,7 @@ roi install
 2. download `system_manifest.json` from the authenticated user's private `roi_state` repo
 3. sync the home repo at `~`
 4. source `~/.bashrc` from the freshly synced home repo for the remaining apply steps
-5. ensure required directories, install packages, install themes, and then sync repos
+5. ensure required directories, install packages, restore `mise` runtimes and npm globals, install themes, and then sync repos
 
 ## Apply Order
 
@@ -112,8 +113,9 @@ Once the manifest is loaded, ROI applies it in this order:
 1. sync the home repo at `~`
 2. ensure `~/Work`, `~/Infra`, `~/Music`, `~/Apps`, and `~/Libs`
 3. install and update the explicit package set
-4. install the `rgwos` Omarchy theme repo and activate `rgwos`
-5. clone or pull repos under `~/Apps`, `~/Libs`, and `~/Work`, then run `install.sh -u` for app repos that ship an installer
+4. restore installed `mise` runtimes and Node npm globals
+5. install the `rgwos` Omarchy theme repo and activate `rgwos`
+6. clone or pull repos under `~/Apps`, `~/Libs`, and `~/Work`, then run each app repo installer from the synced checkout
 
 ## Release Path
 

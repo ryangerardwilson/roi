@@ -13,6 +13,7 @@
   - the required top-level directories
   - repo inventories under `~/Apps`, `~/Libs`, and `~/Work`
   - explicitly installed system packages
+  - installed `mise` runtimes and Node npm globals needed for CLI workflows such as `codex`
 - Do not grow this into a generic dotfiles framework, package manager replacement, or secret vault unless the user explicitly asks.
 
 ## Snapshot Rules
@@ -47,6 +48,7 @@
   - required top-level directories
   - repo inventories under `~/Apps`, `~/Libs`, and `~/Work`
   - explicitly installed packages
+  - installed `mise` runtimes plus captured Node npm globals
 - Only true git repo roots under `~/Apps`, `~/Libs`, and `~/Work` belong in the repo inventory.
 - Do not treat directories that merely live inside the home repo worktree as standalone repos.
 - When reviewing repo inventory diffs, prefer the current real directory names and remotes on disk over stale remembered names.

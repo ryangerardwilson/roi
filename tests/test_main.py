@@ -77,6 +77,7 @@ class MainContractTests(unittest.TestCase):
                 "{\n"
                 '  "active_theme": "rgwos",\n'
                 '  "generated_at": "2026-03-25T00:00:00+00:00",\n'
+                '  "mise": {"tools": [{"name": "node", "version": "25.8.0"}], "npm_globals": [{"name": "@openai/codex", "version": "0.116.0"}]},\n'
                 '  "packages": {"explicit": ["git"]},\n'
                 '  "repos": {"Apps": [], "Libs": [], "Work": []},\n'
                 '  "source_hostname": "test",\n'
