@@ -60,6 +60,26 @@ class EngineBootstrapTests(unittest.TestCase):
             ]
         )
 
+    def test_run_track_once_commits_only_when_snapshot_changes(self):
+        repo_root = Path("/tmp/repo")
+        home_dir = Path("/tmp/home")
+        with (
+            mock.patch("engine._pull_self_repo_if_safe") as pull_self,
+            mock.patch("engine.sync_snapshot", return_value=True) as sync_snapshot,
+            mock.patch("engine.maybe_commit_snapshot") as commit_snapshot,
+        ):
+            changed = engine.run_track_once(
+                repo_root,
+                home_dir,
+                auto_commit=True,
+                auto_push=True,
+            )
+
+        self.assertTrue(changed)
+        pull_self.assert_called_once_with(repo_root)
+        sync_snapshot.assert_called_once_with(repo_root, home_dir)
+        commit_snapshot.assert_called_once_with(repo_root, auto_push=True)
+
 
 if __name__ == "__main__":
     unittest.main()

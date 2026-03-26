@@ -345,15 +345,31 @@ def apply_saved_snapshot(repo_root: Path, home_dir: Path) -> None:
     apply_manifest(manifest, home_dir)
 
 
+def run_track_once(
+    repo_root: Path,
+    home_dir: Path,
+    *,
+    auto_commit: bool,
+    auto_push: bool,
+) -> bool:
+    _pull_self_repo_if_safe(repo_root)
+    changed = sync_snapshot(repo_root, home_dir)
+    if changed and auto_commit:
+        maybe_commit_snapshot(repo_root, auto_push=auto_push)
+    return changed
+
+
 def run_tick(config: InstallerConfig, source_root: Path, home_dir: Path | None = None) -> None:
     home_dir = Path.home() if home_dir is None else home_dir
     repo_root = resolve_repo_root(config.paths.repo_root, source_root)
 
     if config.daemon.mode == "source":
-        _pull_self_repo_if_safe(repo_root)
-        changed = sync_snapshot(repo_root, home_dir)
-        if changed and config.daemon.auto_commit:
-            maybe_commit_snapshot(repo_root, auto_push=config.daemon.auto_push)
+        run_track_once(
+            repo_root,
+            home_dir,
+            auto_commit=config.daemon.auto_commit,
+            auto_push=config.daemon.auto_push,
+        )
         return
 
     if config.daemon.mode == "follower":

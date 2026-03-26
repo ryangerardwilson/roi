@@ -26,8 +26,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/rgw_omarchy_installer/assets dist/rgw_omarchy_installer/snapshot
-          cp AGENTS.md README.md _version.py config.py engine.py main.py manifest.py service.py install.sh requirements.txt dist/rgw_omarchy_installer/
-          cp assets/default_config.toml assets/rgw_omarchy_installer.service.tpl dist/rgw_omarchy_installer/assets/
+          cp AGENTS.md README.md _version.py config.py engine.py main.py manifest.py run_track_once.sh service.py install.sh requirements.txt dist/rgw_omarchy_installer/
+          cp assets/default_config.toml dist/rgw_omarchy_installer/assets/
           cp snapshot/system_manifest.json dist/rgw_omarchy_installer/snapshot/
           printf '__version__ = "%s"\n' "${VERSION}" > dist/rgw_omarchy_installer/_version.py
           tar -C dist -czf rgw_omarchy_installer-linux-x64.tar.gz rgw_omarchy_installer

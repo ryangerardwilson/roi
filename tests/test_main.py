@@ -38,6 +38,12 @@ class MainContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout.strip(), "0.0.0")
 
+    def test_help_mentions_init_and_track(self):
+        result = run_app("-h")
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("rgw_omarchy_installer init", result.stdout)
+        self.assertIn("rgw_omarchy_installer track", result.stdout)
+
     def test_conf_seeds_config(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             env = {"XDG_CONFIG_HOME": temp_dir, "EDITOR": "/usr/bin/true"}

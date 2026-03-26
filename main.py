@@ -6,10 +6,10 @@ from pathlib import Path
 
 from _version import __version__
 from config import CONFIG_TEXT, config_path, load_config
-from engine import OperationError, apply_saved_snapshot, resolve_repo_root, run_tick, sync_snapshot
+from engine import OperationError, apply_saved_snapshot, resolve_repo_root, run_track_once, sync_snapshot
 from manifest import ManifestError, load_manifest, summarize_manifest
 from rgw_cli_contract import AppSpec, resolve_install_script_path, run_app
-from service import ServiceError, disable_service, enable_service, install_service, run_loop, show_status
+from service import ServiceError, enable_track_timer, install_track_units, start_track_service
 
 
 APP_ROOT = Path(__file__).resolve().parent
@@ -26,34 +26,13 @@ flags:
     upgrade to the latest release
 
 features:
-  refresh the checked-in machine snapshot from this laptop
-  # rgw_omarchy_installer snap
-  rgw_omarchy_installer snap
+  initialize this machine from the saved snapshot
+  # rgw_omarchy_installer init
+  rgw_omarchy_installer init
 
-  apply the saved snapshot in the required order
-  # rgw_omarchy_installer apply
-  rgw_omarchy_installer apply
-
-  run one daemon cycle from the configured mode
-  # rgw_omarchy_installer tick
-  rgw_omarchy_installer tick
-
-  install or control the user service
-  # rgw_omarchy_installer svc i|on|off|st
-  rgw_omarchy_installer svc i
-  rgw_omarchy_installer svc on
-
-  inspect the currently saved snapshot
-  # rgw_omarchy_installer show
-  rgw_omarchy_installer show
-
-  run the long-lived daemon loop used by the user service
-  # rgw_omarchy_installer loop
-  rgw_omarchy_installer loop
-
-  edit the daemon config
-  # rgw_omarchy_installer conf
-  rgw_omarchy_installer conf
+  keep the snapshot repo updated once per day in the background
+  # rgw_omarchy_installer track
+  rgw_omarchy_installer track
 """
 
 
@@ -80,42 +59,35 @@ def _dispatch(argv: list[str]) -> int:
     config = load_config()
     repo_root = resolve_repo_root(config.paths.repo_root, APP_ROOT)
 
-    if argv == ["snap"]:
-        sync_snapshot(repo_root, Path.home())
+    if argv == ["init"] or argv == ["apply"]:
+        apply_saved_snapshot(repo_root, Path.home())
         return 0
 
-    if argv == ["apply"]:
-        apply_saved_snapshot(repo_root, Path.home())
+    if argv == ["track"]:
+        timer_path = install_track_units(APP_ROOT)
+        enable_track_timer()
+        start_track_service()
+        print(timer_path)
+        return 0
+
+    if argv == ["__track_once__"] or argv == ["tick"]:
+        run_track_once(
+            repo_root,
+            Path.home(),
+            auto_commit=config.daemon.auto_commit,
+            auto_push=config.daemon.auto_push,
+        )
         return 0
 
     if argv == ["show"]:
         print(summarize_manifest(load_manifest(repo_root)))
         return 0
 
-    if argv == ["tick"]:
-        run_tick(config, APP_ROOT)
+    if argv == ["snap"]:
+        sync_snapshot(repo_root, Path.home())
         return 0
 
-    if argv == ["loop"]:
-        return run_loop(APP_ROOT, config)
-
-    if len(argv) == 2 and argv[0] == "svc":
-        action = argv[1]
-        if action == "i":
-            unit_path = install_service(APP_ROOT, config)
-            print(unit_path)
-            return 0
-        if action == "on":
-            enable_service()
-            return 0
-        if action == "off":
-            disable_service()
-            return 0
-        if action == "st":
-            return show_status()
-        raise UsageError("Usage: rgw_omarchy_installer svc i|on|off|st")
-
-    raise UsageError("Usage: rgw_omarchy_installer snap|apply|show|tick|loop|svc i|on|off|st|conf")
+    raise UsageError("Usage: rgw_omarchy_installer init|track")
 
 
 def main(argv: list[str] | None = None) -> int:

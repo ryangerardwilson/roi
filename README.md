@@ -53,28 +53,17 @@ export PATH="$HOME/.local/bin:$PATH"
 rgw_omarchy_installer -h
 rgw_omarchy_installer -v
 rgw_omarchy_installer -u
-rgw_omarchy_installer conf
-rgw_omarchy_installer snap
-rgw_omarchy_installer show
-rgw_omarchy_installer apply
-rgw_omarchy_installer tick
-rgw_omarchy_installer loop
-rgw_omarchy_installer svc i|on|off|st
+rgw_omarchy_installer init
+rgw_omarchy_installer track
 ```
 
-## Modes
+## Workflow
 
 The user config lives at `~/.config/rgw_omarchy_installer/config.toml`.
 
-`source` mode:
-
-- refreshes `snapshot/system_manifest.json` from the current machine
-- auto-commits and auto-pushes only when the repo is otherwise clean
-
-`follower` mode:
-
-- pulls the configured installer repo when `paths.repo_root` points at a real git checkout
-- applies the saved snapshot only when its digest changes
+- `init` initializes this machine from the saved snapshot.
+- `track` installs and enables a `systemd --user` daily timer, then immediately runs one tracking cycle.
+- The daily tracking cycle refreshes `snapshot/system_manifest.json` from the current machine and auto-commits and auto-pushes only when the repo is otherwise clean.
 
 First bootstrap flow on a new machine:
 
@@ -84,7 +73,7 @@ First bootstrap flow on a new machine:
 
 ## Apply Order
 
-`rgw_omarchy_installer apply` runs the requested order:
+`rgw_omarchy_installer init` runs the required order:
 
 1. sync the home repo at `~`
 2. install the Omarchy theme repos and activate the saved `active_theme`

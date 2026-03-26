@@ -18,7 +18,7 @@
 ## Snapshot Rules
 - The checked-in machine snapshot lives at `snapshot/system_manifest.json`.
 - Treat that manifest as the cross-laptop source of truth for apply operations.
-- Source-mode daemon work may auto-commit and push only the snapshot file.
+- Daily tracking work may auto-commit and push only the snapshot file.
 - If the repo has unrelated local changes, skip auto-commit and auto-push instead of folding those changes into daemon commits.
 - When the user asks to "update the app with my latest work state", the default meaning is:
   - refresh `snapshot/system_manifest.json` from this machine
@@ -31,7 +31,7 @@
 - The home repo being captured is the git repo rooted at `~`.
 - The default config path is `~/.config/rgw_omarchy_installer/config.toml`.
 - The default `paths.repo_root` is `~/Apps/rgw_omarchy_installer`.
-- The app is normally run in `source` mode on the source laptop when refreshing the checked-in snapshot.
+- The primary user-facing commands are `init` and `track`.
 
 ## Latest Work State Refresh Playbook
 - If the user asks to refresh or update the installer with the latest workstation state, prefer this sequence:
@@ -69,8 +69,8 @@
 - If private-release auth needs to be hands-off on a machine, use user-local auth such as `gh auth login`, `GH_TOKEN`, or a local token file outside the repo.
 - Preserve `./push_release_upgrade.sh` and the tagged release workflow so upgrades stay reproducible across laptops.
 
-## Service Rules
-- The user service exists to run repeated sync cycles, not to hide errors.
-- Keep source mode conservative: refresh the manifest, then auto-commit only when the worktree is clean apart from the snapshot file.
-- Keep follower mode conservative: pull the installer repo and apply only when the snapshot digest changes.
-- On a fresh machine, `apply` is allowed to bootstrap GitHub auth through `gh auth login --web`, sync the home repo, source `~/.bashrc`, and then continue the remaining apply steps.
+## Command Semantics
+- `init` is the machine bootstrap path. It should apply the saved snapshot to the current machine.
+- `track` is the source-laptop background tracking path. It should install a once-daily `systemd --user` timer and start one immediate tracking run.
+- The `track` timer should call the repo-owned tracking runner, not a long-lived loop.
+- On a fresh machine, `init` is allowed to bootstrap GitHub auth through `gh auth login --web`, sync the home repo, source `~/.bashrc`, and then continue the remaining apply steps.

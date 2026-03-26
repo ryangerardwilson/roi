@@ -305,11 +305,6 @@ EOF
 chmod 755 "${INSTALL_DIR}/${APP}"
 
 finalize_install
-if command -v systemctl >/dev/null 2>&1; then
-  if "${INSTALL_DIR}/${APP}" svc i; then
-    "${INSTALL_DIR}/${APP}" svc on || true
-  fi
-fi
 
 print_manual_shell_steps
 print_message info "Run: ${APP} -h"
