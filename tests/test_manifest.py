@@ -1,3 +1,4 @@
+import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -97,6 +98,31 @@ class ManifestCaptureTests(unittest.TestCase):
                 manifest = capture_manifest(home_dir)
 
             self.assertEqual(manifest["repos"]["Apps"], [])
+
+    def test_discover_mise_state_ignores_unmanaged_inactive_tool_installs(self):
+        payload = {
+            "node": [
+                {
+                    "version": "25.8.0",
+                    "active": True,
+                    "source": {"path": "/tmp/config.toml"},
+                }
+            ],
+            "python": [
+                {
+                    "version": "3.14.3",
+                    "active": False,
+                }
+            ],
+        }
+
+        with (
+            mock.patch("manifest.shutil.which", return_value="/usr/bin/mise"),
+            mock.patch("manifest._run_capture", side_effect=[json.dumps(payload), ""]),
+        ):
+            state = __import__("manifest").discover_mise_state(Path("/tmp/home"))
+
+        self.assertEqual(state["tools"], [{"name": "node", "version": "25.8.0"}])
 
 
 if __name__ == "__main__":

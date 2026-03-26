@@ -179,6 +179,11 @@ def discover_mise_state(home_dir: Path) -> dict[str, Any]:
             version = str(entry.get("version", "")).strip()
             if not version:
                 continue
+            source = entry.get("source") or {}
+            has_managed_source = isinstance(source, dict) and bool(str(source.get("path", "")).strip())
+            is_active = bool(entry.get("active"))
+            if not has_managed_source and not is_active:
+                continue
             tools.append({"name": tool_name, "version": version})
 
     npm_globals: list[dict[str, str]] = []
