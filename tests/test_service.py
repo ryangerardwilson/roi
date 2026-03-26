@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tempfile
 from pathlib import Path
 from unittest import mock
@@ -37,6 +38,38 @@ class TrackTimerTests(unittest.TestCase):
             service.stop_track_timer()
 
         run_command.assert_called_once_with(["systemctl", "--user", "disable", "--now", service.TRACK_TIMER_NAME])
+
+    def test_runner_uses_installed_launcher_without_path(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            source_root = temp_path / ".roi" / "app" / "source"
+            bin_dir = temp_path / ".roi" / "bin"
+            source_root.mkdir(parents=True)
+            bin_dir.mkdir(parents=True)
+            runner_src = Path(__file__).resolve().parents[1] / "run_track_once.sh"
+            runner_dest = source_root / "run_track_once.sh"
+            runner_dest.write_text(runner_src.read_text(encoding="utf-8"), encoding="utf-8")
+            runner_dest.chmod(0o755)
+
+            launcher = bin_dir / "roi"
+            launcher.write_text(
+                "#!/usr/bin/env bash\n"
+                "set -euo pipefail\n"
+                "printf '%s\\n' \"$@\"\n",
+                encoding="utf-8",
+            )
+            launcher.chmod(0o755)
+
+            result = subprocess.run(
+                ["/usr/bin/bash", str(runner_dest)],
+                env={"HOME": str(temp_path), "PATH": "/usr/bin:/bin"},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout.strip(), "__track_once__")
 
 
 if __name__ == "__main__":
