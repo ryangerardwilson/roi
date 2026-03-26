@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-APP_NAME = "rgw_omarchy_installer"
+APP_NAME = "roi"
 CONFIG_TEXT = (Path(__file__).resolve().parent / "assets" / "default_config.toml").read_text(encoding="utf-8")
 
 

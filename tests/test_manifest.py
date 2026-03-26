@@ -38,8 +38,8 @@ class ManifestCaptureTests(unittest.TestCase):
             init_repo(app_repo, "https://github.com/example/demo.git")
             (app_repo / "install.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
 
-            self_repo = home_dir / "Apps" / "rgw_omarchy_installer"
-            init_repo(self_repo, "https://github.com/example/rgw_omarchy_installer.git")
+            self_repo = home_dir / "Apps" / "roi"
+            init_repo(self_repo, "https://github.com/example/roi.git")
             (self_repo / "install.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
 
             lib_repo = home_dir / "Libs" / "libdemo"
@@ -66,7 +66,7 @@ class ManifestCaptureTests(unittest.TestCase):
             self.assertEqual(len(manifest["repos"]["Apps"]), 2)
             demo_spec = next(spec for spec in manifest["repos"]["Apps"] if spec["name"] == "demo")
             self.assertTrue(demo_spec["install_via_script"])
-            self_spec = next(spec for spec in manifest["repos"]["Apps"] if spec["name"] == "rgw_omarchy_installer")
+            self_spec = next(spec for spec in manifest["repos"]["Apps"] if spec["name"] == "roi")
             self.assertFalse(self_spec["install_via_script"])
             self.assertEqual(manifest["packages"]["explicit"], ["git"])
 

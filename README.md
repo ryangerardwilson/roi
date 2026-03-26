@@ -1,6 +1,6 @@
-# rgw_omarchy_installer
+# roi
 
-`rgw_omarchy_installer` snapshots this laptop's Omarchy workstation state and replays it on another Arch laptop.
+`roi` snapshots this laptop's Omarchy workstation state and replays it on another Arch laptop.
 
 The managed snapshot covers:
 
@@ -17,11 +17,11 @@ The checked-in source of truth is `snapshot/system_manifest.json`.
 The current local-first install path is:
 
 ```bash
-cd ~/Apps/rgw_omarchy_installer
+cd ~/Apps/roi
 ./install.sh -b .
 ```
 
-That installs the public launcher at `~/.local/bin/rgw_omarchy_installer` and enables the user sync service by default.
+That installs the public launcher at `~/.local/bin/roi`.
 
 Local source install via `./install.sh -b .` needs:
 
@@ -35,7 +35,7 @@ Private release install or upgrade via `install.sh -v` or `install.sh -u` needs:
 - one of:
   - an active `gh auth login`
   - `GH_TOKEN` or `GITHUB_TOKEN` in the environment
-  - a local token file at `~/.config/rgw_omarchy_installer/github_token`
+  - a local token file at `~/.config/roi/github_token`
 
 The token file is local machine state. Keep it out of the repo and lock it down to your user.
 
@@ -50,20 +50,20 @@ export PATH="$HOME/.local/bin:$PATH"
 ## Commands
 
 ```text
-rgw_omarchy_installer -h
-rgw_omarchy_installer -v
-rgw_omarchy_installer -u
-rgw_omarchy_installer init
-rgw_omarchy_installer track
+roi -h
+roi -v
+roi -u
+roi init
+roi track
 ```
 
 ## Workflow
 
-The user config lives at `~/.config/rgw_omarchy_installer/config.toml`.
+The user config lives at `~/.config/roi/config.toml`.
 
 - `init` initializes this machine from the saved snapshot.
 - `track` installs and enables a `systemd --user` daily timer, then immediately runs one tracking cycle.
-- The daily tracking cycle refreshes `snapshot/system_manifest.json` from the current machine and auto-commits and auto-pushes only when the repo is otherwise clean.
+- The daily tracking cycle refreshes `snapshot/system_manifest.json` from the current machine and auto-commits and auto-pushes to `origin/main` only when the repo is otherwise clean and the current branch is `main`.
 
 First bootstrap flow on a new machine:
 
@@ -73,7 +73,7 @@ First bootstrap flow on a new machine:
 
 ## Apply Order
 
-`rgw_omarchy_installer init` runs the required order:
+`roi init` runs the required order:
 
 1. sync the home repo at `~`
 2. install the Omarchy theme repos and activate the saved `active_theme`
@@ -89,6 +89,6 @@ This app still ships the normal release path:
 ./push_release_upgrade.sh
 ```
 
-Release precondition: this directory must live in its own git repo rooted at `~/Apps/rgw_omarchy_installer` with `origin` set to `ryangerardwilson/rgw_omarchy_installer`.
+Release precondition: this directory must live in its own git repo rooted at `~/Apps/roi` with `origin` set to `ryangerardwilson/roi`.
 
 When that repo exists privately on GitHub, `install.sh` uses authenticated GitHub CLI release downloads instead of anonymous public release URLs.

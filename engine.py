@@ -288,8 +288,28 @@ def _git_status_paths(repo_root: Path) -> list[str]:
     return paths
 
 
+def _current_branch(repo_root: Path) -> str:
+    return _capture(
+        ["git", "-C", str(repo_root), "symbolic-ref", "--quiet", "--short", "HEAD"],
+        allow_failure=True,
+    )
+
+
+def _track_branch_ready(repo_root: Path) -> bool:
+    if not (repo_root / ".git").exists():
+        return True
+    branch = _current_branch(repo_root)
+    if branch == "main":
+        return True
+    display = branch or "detached HEAD"
+    print(f"self repo: skip track because current branch is {display}, not main")
+    return False
+
+
 def _pull_self_repo_if_safe(repo_root: Path) -> None:
     if not (repo_root / ".git").exists():
+        return
+    if not _track_branch_ready(repo_root):
         return
     paths = _git_status_paths(repo_root)
     allowed = {str(MANIFEST_REL_PATH)}
@@ -297,11 +317,13 @@ def _pull_self_repo_if_safe(repo_root: Path) -> None:
         print("self repo: skip pull because unrelated local changes exist")
         return
     print("self repo: pull")
-    _run(["git", "-C", str(repo_root), "pull", "--ff-only"])
+    _run(["git", "-C", str(repo_root), "pull", "--ff-only", "origin", "main"])
 
 
 def maybe_commit_snapshot(repo_root: Path, auto_push: bool) -> bool:
     if not (repo_root / ".git").exists():
+        return False
+    if not _track_branch_ready(repo_root):
         return False
     paths = _git_status_paths(repo_root)
     if not paths:
@@ -322,8 +344,8 @@ def maybe_commit_snapshot(repo_root: Path, auto_push: bool) -> bool:
         ]
     )
     if auto_push:
-        print("self repo: push")
-        _run(["git", "-C", str(repo_root), "push"])
+        print("self repo: push origin main")
+        _run(["git", "-C", str(repo_root), "push", "origin", "main"])
     return True
 
 
@@ -352,6 +374,8 @@ def run_track_once(
     auto_commit: bool,
     auto_push: bool,
 ) -> bool:
+    if not _track_branch_ready(repo_root):
+        return False
     _pull_self_repo_if_safe(repo_root)
     changed = sync_snapshot(repo_root, home_dir)
     if changed and auto_commit:

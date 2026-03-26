@@ -1,4 +1,4 @@
-# rgw_omarchy_installer Agent Guide
+# roi Agent Guide
 
 ## Workspace Defaults
 - Follow `/home/ryan/Documents/agent_context/CLI_TUI_STYLE_GUIDE.md` for CLI taste and help shape.
@@ -6,7 +6,7 @@
 - Follow `/home/ryan/Documents/agent_context/OMARCHY_THEME_WORKFLOW.md` for Omarchy theme source-of-truth rules.
 
 ## Scope
-- `rgw_omarchy_installer` owns one job: capture this laptop's Omarchy workstation state and re-apply it on another Arch laptop.
+- `roi` owns one job: capture this laptop's Omarchy workstation state and re-apply it on another Arch laptop.
 - Keep the managed state limited to:
   - the home-directory git repo
   - the six repo-backed Omarchy themes and active theme
@@ -26,16 +26,16 @@
   - commit and push the snapshot only if the user asked for the repo to be updated or pushed
 
 ## Current Machine Context
-- The installer repo itself lives at `~/Apps/rgw_omarchy_installer`.
-- The installer repo remote should be `https://github.com/ryangerardwilson/rgw_omarchy_installer.git`.
+- The installer repo itself lives at `~/Apps/roi`.
+- The installer repo remote should be `https://github.com/ryangerardwilson/roi.git`.
 - The home repo being captured is the git repo rooted at `~`.
-- The default config path is `~/.config/rgw_omarchy_installer/config.toml`.
-- The default `paths.repo_root` is `~/Apps/rgw_omarchy_installer`.
+- The default config path is `~/.config/roi/config.toml`.
+- The default `paths.repo_root` is `~/Apps/roi`.
 - The primary user-facing commands are `init` and `track`.
 
 ## Latest Work State Refresh Playbook
 - If the user asks to refresh or update the installer with the latest workstation state, prefer this sequence:
-  1. run `python3 main.py snap` from the repo root, or `rgw_omarchy_installer snap` if the installed launcher is already available
+  1. run `python3 main.py snap` from the repo root, or `roi snap` if the installed launcher is already available
   2. inspect `git diff -- snapshot/system_manifest.json`
   3. verify that the diff reflects real workstation changes rather than accidental repo-shape drift
   4. if the user asked to push, commit only `snapshot/system_manifest.json` and push
@@ -60,6 +60,7 @@
 - For a pure work-state refresh, the preferred commit scope is `snapshot/system_manifest.json` only.
 - If code or docs also changed as part of the task, keep those changes in a separate commit unless the user explicitly wants them bundled.
 - If the user asks to "push the repo", push the current branch after verifying the snapshot diff and commit scope.
+- `track` should auto-push only to `origin/main`, and only when the current branch is `main`.
 - Only use `./push_release_upgrade.sh` when the user explicitly wants the shipped release path, not for ordinary snapshot refreshes.
 
 ## Install / Upgrade Deviation

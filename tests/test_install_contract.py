@@ -76,7 +76,7 @@ class InstallContractTests(unittest.TestCase):
                 "exit 1\n",
             )
             self._write_executable(
-                bin_dir / "rgw_omarchy_installer",
+                bin_dir / "roi",
                 "#!/usr/bin/bash\n"
                 "if [[ \"$1\" == \"-v\" ]]; then\n"
                 "  printf '0.1.21\\n'\n"
@@ -89,7 +89,7 @@ class InstallContractTests(unittest.TestCase):
             result = self._run_installer(home_dir, "-u", path_prefix=bin_dir)
 
             self.assertIn("already installed", result.stdout)
-            self.assertTrue((Path('$HOME/.local/bin'.replace("$HOME", str(home_dir))) / 'rgw_omarchy_installer').exists())
+            self.assertTrue((Path('$HOME/.local/bin'.replace("$HOME", str(home_dir))) / 'roi').exists())
 
     def test_local_source_install_writes_managed_launchers(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -99,17 +99,17 @@ class InstallContractTests(unittest.TestCase):
 
             result = self._run_installer(home_dir, "-b", str(INSTALLER.parent), "-n")
 
-            internal_launcher = home_dir / ".rgw_omarchy_installer" / "bin" / 'rgw_omarchy_installer'
+            internal_launcher = home_dir / ".roi" / "bin" / 'roi'
             self.assertTrue(internal_launcher.exists())
             internal_text = internal_launcher.read_text(encoding="utf-8")
             self.assertIn('exec "', internal_text)
-            self.assertIn('/.rgw_omarchy_installer/venv/bin/python', internal_text)
-            self.assertIn('/.rgw_omarchy_installer/app/source/main.py', internal_text)
+            self.assertIn('/.roi/venv/bin/python', internal_text)
+            self.assertIn('/.roi/app/source/main.py', internal_text)
             self.assertEqual(
                 bashrc_path.read_text(encoding='utf-8'),
                 '# existing shell config\n',
             )
-            public_launcher = Path('$HOME/.local/bin'.replace("$HOME", str(home_dir))) / 'rgw_omarchy_installer'
+            public_launcher = Path('$HOME/.local/bin'.replace("$HOME", str(home_dir))) / 'roi'
             self.assertTrue(public_launcher.exists())
             public_text = public_launcher.read_text(encoding="utf-8")
             self.assertIn('# Managed by rgw_cli_contract local-bin launcher', public_text)
@@ -129,7 +129,7 @@ class InstallContractTests(unittest.TestCase):
             tmp_path = Path(tmp)
             bin_dir = tmp_path / "bin"
             home_dir = tmp_path / "home"
-            token_dir = home_dir / ".config" / "rgw_omarchy_installer"
+            token_dir = home_dir / ".config" / "roi"
             token_file = token_dir / "github_token"
             bin_dir.mkdir()
             token_dir.mkdir(parents=True)

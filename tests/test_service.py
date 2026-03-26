@@ -9,18 +9,18 @@ import service
 
 class TrackTimerTests(unittest.TestCase):
     def test_render_track_units_reference_daily_runner(self):
-        source_root = Path("/tmp/rgw_omarchy_installer")
+        source_root = Path("/tmp/roi")
 
         service_text = service.render_track_service_unit(source_root)
         timer_text = service.render_track_timer_unit()
 
-        self.assertIn("ExecStart=/usr/bin/bash /tmp/rgw_omarchy_installer/run_track_once.sh", service_text)
+        self.assertIn("ExecStart=/usr/bin/bash /tmp/roi/run_track_once.sh", service_text)
         self.assertIn("OnCalendar=daily", timer_text)
         self.assertIn(f"Unit={service.TRACK_SERVICE_NAME}", timer_text)
 
     def test_install_track_units_writes_service_and_timer(self):
         with tempfile.TemporaryDirectory() as temp_dir:
-            source_root = Path("/tmp/rgw_omarchy_installer")
+            source_root = Path("/tmp/roi")
             with (
                 mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": temp_dir}, clear=False),
                 mock.patch("service._run") as run_command,

@@ -8,8 +8,8 @@ if [[ -f "$HOME/.bashrc" ]]; then
   source "$HOME/.bashrc" >/dev/null 2>&1 || true
 fi
 
-if command -v rgw_omarchy_installer >/dev/null 2>&1; then
-  exec rgw_omarchy_installer __track_once__
+if command -v roi >/dev/null 2>&1; then
+  exec roi __track_once__
 fi
 
 if [[ -d "$CONTRACT_SRC" ]]; then

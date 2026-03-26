@@ -6,4 +6,4 @@ auto_push = true
 auto_apply = true
 
 [paths]
-repo_root = "$HOME/Apps/rgw_omarchy_installer"
+repo_root = "$HOME/Apps/roi"

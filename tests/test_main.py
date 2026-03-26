@@ -41,15 +41,15 @@ class MainContractTests(unittest.TestCase):
     def test_help_mentions_init_and_track(self):
         result = run_app("-h")
         self.assertEqual(result.returncode, 0)
-        self.assertIn("rgw_omarchy_installer init", result.stdout)
-        self.assertIn("rgw_omarchy_installer track", result.stdout)
+        self.assertIn("roi init", result.stdout)
+        self.assertIn("roi track", result.stdout)
 
     def test_conf_seeds_config(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             env = {"XDG_CONFIG_HOME": temp_dir, "EDITOR": "/usr/bin/true"}
             result = run_app("conf", env=env)
             self.assertEqual(result.returncode, 0)
-            target = Path(temp_dir) / "rgw_omarchy_installer" / "config.toml"
+            target = Path(temp_dir) / "roi" / "config.toml"
             self.assertTrue(target.exists())
             self.assertIn('mode = "source"', target.read_text(encoding="utf-8"))
 
@@ -60,8 +60,8 @@ class MainContractTests(unittest.TestCase):
             repo_root = temp_path / "repo"
             snapshot_dir = repo_root / "snapshot"
             snapshot_dir.mkdir(parents=True)
-            (config_home / "rgw_omarchy_installer").mkdir(parents=True)
-            (config_home / "rgw_omarchy_installer" / "config.toml").write_text(
+            (config_home / "roi").mkdir(parents=True)
+            (config_home / "roi" / "config.toml").write_text(
                 "[daemon]\n"
                 'mode = "source"\n'
                 "poll_seconds = 300\n"

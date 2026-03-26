@@ -14,25 +14,25 @@ from service import ServiceError, enable_track_timer, install_track_units, start
 
 APP_ROOT = Path(__file__).resolve().parent
 INSTALL_SCRIPT = resolve_install_script_path(__file__)
-HELP_TEXT = """rgw_omarchy_installer
+HELP_TEXT = """roi
 capture this Omarchy laptop and replay it on another one
 
 flags:
-  rgw_omarchy_installer -h
+  roi -h
     show this help
-  rgw_omarchy_installer -v
+  roi -v
     print the installed version
-  rgw_omarchy_installer -u
+  roi -u
     upgrade to the latest release
 
 features:
   initialize this machine from the saved snapshot
-  # rgw_omarchy_installer init
-  rgw_omarchy_installer init
+  # roi init
+  roi init
 
   keep the snapshot repo updated once per day in the background
-  # rgw_omarchy_installer track
-  rgw_omarchy_installer track
+  # roi track
+  roi track
 """
 
 
@@ -41,7 +41,7 @@ class UsageError(ValueError):
 
 
 APP_SPEC = AppSpec(
-    app_name="rgw_omarchy_installer",
+    app_name="roi",
     version=__version__,
     help_text=HELP_TEXT,
     install_script_path=INSTALL_SCRIPT,
@@ -87,7 +87,7 @@ def _dispatch(argv: list[str]) -> int:
         sync_snapshot(repo_root, Path.home())
         return 0
 
-    raise UsageError("Usage: rgw_omarchy_installer init|track")
+    raise UsageError("Usage: roi init|track")
 
 
 def main(argv: list[str] | None = None) -> int:

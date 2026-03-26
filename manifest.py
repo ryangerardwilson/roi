@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-APP_NAME = "rgw_omarchy_installer"
+APP_NAME = "roi"
 MANIFEST_REL_PATH = Path("snapshot/system_manifest.json")
 MANAGED_DIR_NAMES = ("Work", "Infra", "Music", "Apps", "Libs")
 REPO_GROUPS = ("Apps", "Libs", "Work")
@@ -217,7 +217,7 @@ def summarize_manifest(manifest: dict[str, Any]) -> str:
     repos = manifest.get("repos", {})
     packages = manifest.get("packages", {})
     lines = [
-        "rgw_omarchy_installer",
+        "roi",
         "",
         f"generated: {manifest.get('generated_at', 'unknown')}",
         f"source: {manifest.get('source_hostname', 'unknown')}",

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP=rgw_omarchy_installer
-REPO="ryangerardwilson/rgw_omarchy_installer"
+APP=roi
+REPO="ryangerardwilson/roi"
 APP_HOME="$HOME/.${APP}"
 INSTALL_DIR="$APP_HOME/bin"
 APP_DIR="$APP_HOME/app"
 SOURCE_DIR="$APP_DIR/source"
 VENV_DIR="$APP_HOME/venv"
-FILENAME="rgw_omarchy_installer-linux-x64.tar.gz"
+FILENAME="roi-linux-x64.tar.gz"
 PUBLIC_BIN_DIR="$HOME/.local/bin"
 PUBLIC_LAUNCHER="$PUBLIC_BIN_DIR/${APP}"
 TOKEN_FILE_DEFAULT="$HOME/.config/${APP}/github_token"
@@ -59,7 +59,7 @@ configure_github_auth() {
     return 0
   fi
 
-  local token_file="${RGW_OMARCHY_INSTALLER_GITHUB_TOKEN_FILE:-$TOKEN_FILE_DEFAULT}"
+  local token_file="${ROI_GITHUB_TOKEN_FILE:-${RGW_OMARCHY_INSTALLER_GITHUB_TOKEN_FILE:-$TOKEN_FILE_DEFAULT}}"
   if [[ -f "$token_file" ]]; then
     local token
     token="$(tr -d '\r\n' < "$token_file")"

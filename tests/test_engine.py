@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 from unittest import mock
 import unittest
 
@@ -79,6 +80,23 @@ class EngineBootstrapTests(unittest.TestCase):
         pull_self.assert_called_once_with(repo_root)
         sync_snapshot.assert_called_once_with(repo_root, home_dir)
         commit_snapshot.assert_called_once_with(repo_root, auto_push=True)
+
+    def test_maybe_commit_snapshot_pushes_origin_main(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repo_root = Path(temp_dir)
+            (repo_root / ".git").mkdir()
+            with (
+                mock.patch("engine._track_branch_ready", return_value=True),
+                mock.patch("engine._git_status_paths", return_value=["snapshot/system_manifest.json"]),
+                mock.patch("engine._run") as run,
+            ):
+                committed = engine.maybe_commit_snapshot(repo_root, auto_push=True)
+
+        self.assertTrue(committed)
+        self.assertIn(
+            mock.call(["git", "-C", str(repo_root), "push", "origin", "main"]),
+            run.call_args_list,
+        )
 
 
 if __name__ == "__main__":

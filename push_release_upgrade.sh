@@ -5,7 +5,7 @@ ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
 APP=""
-EXPECTED_REPO_SLUG="ryangerardwilson/rgw_omarchy_installer"
+EXPECTED_REPO_SLUG="ryangerardwilson/roi"
 REMOTE="origin"
 REPO_SLUG=""
 POLL_ATTEMPTS=60
