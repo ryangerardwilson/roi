@@ -25,9 +25,17 @@ class PathsConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class StateRepoConfig:
+    repo_owner: str
+    repo_name: str
+    manifest_path: str
+
+
+@dataclass(frozen=True, slots=True)
 class InstallerConfig:
     daemon: DaemonConfig
     paths: PathsConfig
+    state: StateRepoConfig
 
 
 def _xdg_path(env_name: str, default_suffix: str) -> Path:
@@ -91,6 +99,9 @@ def load_config() -> InstallerConfig:
     paths_table = data.get("paths", {})
     if not isinstance(paths_table, dict):
         raise ValueError("[paths] must be a table")
+    state_table = data.get("state", {})
+    if not isinstance(state_table, dict):
+        raise ValueError("[state] must be a table")
 
     mode = str(daemon_table.get("mode", "source")).strip().lower()
     if mode not in {"source", "follower"}:
@@ -101,6 +112,9 @@ def load_config() -> InstallerConfig:
         raise ValueError("daemon.poll_seconds must be positive")
 
     repo_root_raw = str(paths_table.get("repo_root", f"$HOME/Apps/{APP_NAME}"))
+    repo_owner = str(state_table.get("repo_owner", "")).strip()
+    repo_name = str(state_table.get("repo_name", "roi_state")).strip() or "roi_state"
+    manifest_path_raw = str(state_table.get("manifest_path", "system_manifest.json")).strip() or "system_manifest.json"
 
     return InstallerConfig(
         daemon=DaemonConfig(
@@ -111,4 +125,9 @@ def load_config() -> InstallerConfig:
             auto_apply=bool(daemon_table.get("auto_apply", True)),
         ),
         paths=PathsConfig(repo_root=_expand_home(repo_root_raw)),
+        state=StateRepoConfig(
+            repo_owner=repo_owner,
+            repo_name=repo_name,
+            manifest_path=manifest_path_raw,
+        ),
     )

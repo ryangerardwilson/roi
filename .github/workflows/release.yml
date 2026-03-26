@@ -26,7 +26,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/roi/assets dist/roi/snapshot
-          cp AGENTS.md README.md _version.py config.py engine.py main.py manifest.py run_track_once.sh service.py install.sh requirements.txt dist/roi/
+          cp AGENTS.md README.md _version.py config.py engine.py main.py manifest.py run_track_once.sh service.py state_repo.py install.sh requirements.txt dist/roi/
           cp assets/default_config.toml dist/roi/assets/
           cp snapshot/system_manifest.json dist/roi/snapshot/
           printf '__version__ = "%s"\n' "${VERSION}" > dist/roi/_version.py

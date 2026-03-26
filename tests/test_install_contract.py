@@ -37,16 +37,13 @@ class InstallContractTests(unittest.TestCase):
             home_dir.mkdir()
 
             self._write_executable(
-                bin_dir / "gh",
+                bin_dir / "curl",
                 "#!/usr/bin/bash\n"
-                "if [[ \"$*\" == \"auth status\" ]]; then\n"
+                "if [[ \"$*\" == *\"api.github.com/repos/ryangerardwilson/roi/releases/latest\"* ]]; then\n"
+                "  printf '{\"tag_name\": \"v0.1.21\"}\\n'\n"
                 "  exit 0\n"
                 "fi\n"
-                "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
-                "  printf 'v0.1.21\\n'\n"
-                "  exit 0\n"
-                "fi\n"
-                "echo unexpected gh call >&2\n"
+                "echo unexpected curl call >&2\n"
                 "exit 1\n",
             )
 
@@ -63,16 +60,13 @@ class InstallContractTests(unittest.TestCase):
             home_dir.mkdir()
 
             self._write_executable(
-                bin_dir / "gh",
+                bin_dir / "curl",
                 "#!/usr/bin/bash\n"
-                "if [[ \"$*\" == \"auth status\" ]]; then\n"
+                "if [[ \"$*\" == *\"api.github.com/repos/ryangerardwilson/roi/releases/latest\"* ]]; then\n"
+                "  printf '{\"tag_name\": \"v0.1.21\"}\\n'\n"
                 "  exit 0\n"
                 "fi\n"
-                "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
-                "  printf 'v0.1.21\\n'\n"
-                "  exit 0\n"
-                "fi\n"
-                "echo unexpected gh call >&2\n"
+                "echo unexpected curl call >&2\n"
                 "exit 1\n",
             )
             self._write_executable(
@@ -123,75 +117,6 @@ class InstallContractTests(unittest.TestCase):
             )
             self.assertEqual(version.stdout.strip(), '0.0.0')
             self.assertIn(f"Manually add to ~/.bashrc if needed: export PATH={public_launcher.parent}:$PATH", result.stdout)
-
-    def test_dash_v_uses_local_token_file_when_present(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            bin_dir = tmp_path / "bin"
-            home_dir = tmp_path / "home"
-            token_dir = home_dir / ".config" / "roi"
-            token_file = token_dir / "github_token"
-            bin_dir.mkdir()
-            token_dir.mkdir(parents=True)
-            home_dir.mkdir(exist_ok=True)
-            token_file.write_text("ghp_test_token\n", encoding="utf-8")
-
-            self._write_executable(
-                bin_dir / "gh",
-                "#!/usr/bin/bash\n"
-                "if [[ \"$GH_TOKEN\" != \"ghp_test_token\" ]]; then\n"
-                "  echo missing token >&2\n"
-                "  exit 1\n"
-                "fi\n"
-                "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
-                "  printf 'v0.1.22\\n'\n"
-                "  exit 0\n"
-                "fi\n"
-                "echo unexpected gh call >&2\n"
-                "exit 1\n",
-            )
-
-            result = self._run_installer(home_dir, "-v", path_prefix=bin_dir)
-
-            self.assertEqual(result.stdout.strip(), "0.1.22")
-
-    def test_dash_v_starts_web_login_when_no_auth_exists(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            bin_dir = tmp_path / "bin"
-            home_dir = tmp_path / "home"
-            state_dir = tmp_path / "state"
-            bin_dir.mkdir()
-            home_dir.mkdir()
-            state_dir.mkdir()
-
-            self._write_executable(
-                bin_dir / "gh",
-                "#!/usr/bin/bash\n"
-                f"state_dir={state_dir}\n"
-                "if [[ \"$*\" == \"auth status\" ]]; then\n"
-                "  [[ -f \"$state_dir/authed\" ]] && exit 0\n"
-                "  exit 1\n"
-                "fi\n"
-                "if [[ \"$*\" == \"auth login --web --git-protocol https --skip-ssh-key\" ]]; then\n"
-                "  touch \"$state_dir/authed\"\n"
-                "  exit 0\n"
-                "fi\n"
-                "if [[ \"$*\" == \"auth setup-git\" ]]; then\n"
-                "  exit 0\n"
-                "fi\n"
-                "if [[ \"$*\" == *\"releases/latest\"* ]]; then\n"
-                "  printf 'v0.1.23\\n'\n"
-                "  exit 0\n"
-                "fi\n"
-                "echo unexpected gh call >&2\n"
-                "exit 1\n",
-            )
-
-            result = self._run_installer(home_dir, "-v", path_prefix=bin_dir)
-
-            self.assertEqual(result.stdout.strip().splitlines()[-1], "0.1.23")
-            self.assertTrue((state_dir / "authed").exists())
 
 
 if __name__ == "__main__":

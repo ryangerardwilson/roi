@@ -6,10 +6,11 @@ from pathlib import Path
 
 from _version import __version__
 from config import CONFIG_TEXT, config_path, load_config
-from engine import OperationError, apply_saved_snapshot, resolve_repo_root, run_track_once, sync_snapshot
+from engine import OperationError, initialize_state_repo, install_from_state_repo, resolve_repo_root, run_track_once, sync_snapshot
 from manifest import ManifestError, load_manifest, summarize_manifest
 from rgw_cli_contract import AppSpec, resolve_install_script_path, run_app
 from service import ServiceError, enable_track_timer, install_track_units, start_track_service
+from state_repo import StateRepoError
 
 
 APP_ROOT = Path(__file__).resolve().parent
@@ -26,13 +27,17 @@ flags:
     upgrade to the latest release
 
 features:
-  initialize this machine from the saved snapshot
+  initialize the private roi_state repo for this account
   # roi init
   roi init
 
-  keep the snapshot repo updated once per day in the background
+  keep roi_state updated once per day in the background
   # roi track
   roi track
+
+  install this machine from roi_state
+  # roi install
+  roi install
 """
 
 
@@ -59,11 +64,16 @@ def _dispatch(argv: list[str]) -> int:
     config = load_config()
     repo_root = resolve_repo_root(config.paths.repo_root, APP_ROOT)
 
-    if argv == ["init"] or argv == ["apply"]:
-        apply_saved_snapshot(repo_root, Path.home())
+    if argv == ["init"]:
+        initialize_state_repo(config, Path.home())
+        return 0
+
+    if argv == ["install"] or argv == ["apply"]:
+        install_from_state_repo(config, Path.home())
         return 0
 
     if argv == ["track"]:
+        initialize_state_repo(config, Path.home())
         timer_path = install_track_units(APP_ROOT)
         enable_track_timer()
         start_track_service()
@@ -71,12 +81,7 @@ def _dispatch(argv: list[str]) -> int:
         return 0
 
     if argv == ["__track_once__"] or argv == ["tick"]:
-        run_track_once(
-            repo_root,
-            Path.home(),
-            auto_commit=config.daemon.auto_commit,
-            auto_push=config.daemon.auto_push,
-        )
+        run_track_once(config, Path.home())
         return 0
 
     if argv == ["show"]:
@@ -87,7 +92,7 @@ def _dispatch(argv: list[str]) -> int:
         sync_snapshot(repo_root, Path.home())
         return 0
 
-    raise UsageError("Usage: roi init|track")
+    raise UsageError("Usage: roi init|track|install")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -97,7 +102,7 @@ def main(argv: list[str] | None = None) -> int:
     except UsageError as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    except (ManifestError, OperationError, ServiceError, ValueError) as exc:
+    except (ManifestError, OperationError, ServiceError, StateRepoError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
     except KeyboardInterrupt:

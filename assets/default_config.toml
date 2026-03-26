@@ -7,3 +7,8 @@ auto_apply = true
 
 [paths]
 repo_root = "$HOME/Apps/roi"
+
+[state]
+repo_owner = ""
+repo_name = "roi_state"
+manifest_path = "system_manifest.json"

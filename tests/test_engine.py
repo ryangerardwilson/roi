@@ -1,5 +1,4 @@
 from pathlib import Path
-import tempfile
 from unittest import mock
 import unittest
 
@@ -41,6 +40,41 @@ class EngineBootstrapTests(unittest.TestCase):
         sync_repo_group.assert_any_call(manifest, home_dir, "Work", env=runtime_env)
         sync_packages.assert_called_once_with(manifest, env=runtime_env)
 
+    def test_initialize_state_repo_loads_shell_env_and_syncs_remote_state(self):
+        config = mock.Mock()
+        home_dir = Path("/tmp/test-home")
+        runtime_env = {"HOME": str(home_dir), "GH_TOKEN": "from-bashrc"}
+        manifest = {"schema_version": 1}
+        spec = mock.Mock(slug="example/roi_state", manifest_path="system_manifest.json")
+
+        with (
+            mock.patch("engine._load_home_shell_env", return_value=runtime_env),
+            mock.patch("engine.capture_manifest", return_value=manifest) as capture_manifest,
+            mock.patch("engine.sync_manifest", return_value=(spec, True)) as sync_manifest,
+        ):
+            changed = engine.initialize_state_repo(config, home_dir)
+
+        self.assertTrue(changed)
+        capture_manifest.assert_called_once_with(home_dir)
+        sync_manifest.assert_called_once_with(config, manifest, runtime_env, allow_web_login=True)
+
+    def test_install_from_state_repo_downloads_then_applies(self):
+        config = mock.Mock()
+        home_dir = Path("/tmp/test-home")
+        env = {"HOME": str(home_dir)}
+        manifest = {"schema_version": 1}
+
+        with (
+            mock.patch("engine._command_env", return_value=env) as command_env,
+            mock.patch("engine.read_remote_manifest", return_value=manifest) as read_remote_manifest,
+            mock.patch("engine.apply_manifest") as apply_manifest,
+        ):
+            engine.install_from_state_repo(config, home_dir)
+
+        command_env.assert_called_once_with(home_dir)
+        read_remote_manifest.assert_called_once_with(config, env, allow_web_login=True)
+        apply_manifest.assert_called_once_with(manifest, home_dir)
+
     def test_ensure_github_auth_uses_web_login_when_no_auth_exists(self):
         home_dir = Path("/tmp/test-home")
         with (
@@ -61,42 +95,22 @@ class EngineBootstrapTests(unittest.TestCase):
             ]
         )
 
-    def test_run_track_once_commits_only_when_snapshot_changes(self):
-        repo_root = Path("/tmp/repo")
+    def test_run_track_once_syncs_remote_state(self):
+        config = mock.Mock()
         home_dir = Path("/tmp/home")
+        runtime_env = {"HOME": str(home_dir), "GH_TOKEN": "from-bashrc"}
+        manifest = {"schema_version": 1}
+        spec = mock.Mock(slug="example/roi_state", manifest_path="system_manifest.json")
         with (
-            mock.patch("engine._pull_self_repo_if_safe") as pull_self,
-            mock.patch("engine.sync_snapshot", return_value=True) as sync_snapshot,
-            mock.patch("engine.maybe_commit_snapshot") as commit_snapshot,
+            mock.patch("engine._load_home_shell_env", return_value=runtime_env),
+            mock.patch("engine.capture_manifest", return_value=manifest) as capture_manifest,
+            mock.patch("engine.sync_manifest", return_value=(spec, True)) as sync_manifest,
         ):
-            changed = engine.run_track_once(
-                repo_root,
-                home_dir,
-                auto_commit=True,
-                auto_push=True,
-            )
+            changed = engine.run_track_once(config, home_dir)
 
         self.assertTrue(changed)
-        pull_self.assert_called_once_with(repo_root)
-        sync_snapshot.assert_called_once_with(repo_root, home_dir)
-        commit_snapshot.assert_called_once_with(repo_root, auto_push=True)
-
-    def test_maybe_commit_snapshot_pushes_origin_main(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            repo_root = Path(temp_dir)
-            (repo_root / ".git").mkdir()
-            with (
-                mock.patch("engine._track_branch_ready", return_value=True),
-                mock.patch("engine._git_status_paths", return_value=["snapshot/system_manifest.json"]),
-                mock.patch("engine._run") as run,
-            ):
-                committed = engine.maybe_commit_snapshot(repo_root, auto_push=True)
-
-        self.assertTrue(committed)
-        self.assertIn(
-            mock.call(["git", "-C", str(repo_root), "push", "origin", "main"]),
-            run.call_args_list,
-        )
+        capture_manifest.assert_called_once_with(home_dir)
+        sync_manifest.assert_called_once_with(config, manifest, runtime_env, allow_web_login=False)
 
 
 if __name__ == "__main__":

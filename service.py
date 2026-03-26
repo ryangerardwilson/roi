@@ -32,7 +32,7 @@ def render_track_service_unit(source_root: Path) -> str:
     runner_path = source_root / "run_track_once.sh"
     return (
         "[Unit]\n"
-        "Description=ROI Daily Tracker\n\n"
+        "Description=ROI State Daily Tracker\n\n"
         "[Service]\n"
         "Type=oneshot\n"
         f"WorkingDirectory={source_root}\n"
@@ -43,7 +43,7 @@ def render_track_service_unit(source_root: Path) -> str:
 def render_track_timer_unit() -> str:
     return (
         "[Unit]\n"
-        "Description=Run ROI Daily Tracker\n\n"
+        "Description=Run ROI State Daily Tracker\n\n"
         "[Timer]\n"
         "OnCalendar=daily\n"
         "Persistent=true\n"

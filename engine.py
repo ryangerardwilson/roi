@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import json
 import os
 import shlex
 import shutil
 import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from config import APP_NAME, InstallerConfig, state_path
-from manifest import MANIFEST_REL_PATH, ManifestError, capture_manifest, load_manifest, manifest_digest, save_manifest
+from config import APP_NAME, InstallerConfig
+from manifest import MANIFEST_REL_PATH, capture_manifest, save_manifest
+from state_repo import read_remote_manifest, sync_manifest
 
 
 class OperationError(RuntimeError):
@@ -261,6 +260,32 @@ def apply_manifest(manifest: dict[str, Any], home_dir: Path) -> None:
     _sync_packages(manifest, env=runtime_env)
 
 
+def initialize_state_repo(config: InstallerConfig, home_dir: Path) -> bool:
+    runtime_env = _load_home_shell_env(home_dir)
+    manifest = capture_manifest(home_dir)
+    spec, changed = sync_manifest(
+        config,
+        manifest,
+        runtime_env,
+        allow_web_login=True,
+    )
+    print(f"state repo: {spec.slug}")
+    if changed:
+        print(f"state manifest: updated {spec.manifest_path}")
+    else:
+        print(f"state manifest: unchanged {spec.manifest_path}")
+    return changed
+
+
+def install_from_state_repo(config: InstallerConfig, home_dir: Path) -> None:
+    manifest = read_remote_manifest(
+        config,
+        _command_env(home_dir),
+        allow_web_login=True,
+    )
+    apply_manifest(manifest, home_dir)
+
+
 def sync_snapshot(repo_root: Path, home_dir: Path) -> bool:
     manifest = capture_manifest(home_dir)
     changed = save_manifest(repo_root, manifest)
@@ -272,144 +297,21 @@ def sync_snapshot(repo_root: Path, home_dir: Path) -> bool:
     return changed
 
 
-def _git_status_paths(repo_root: Path) -> list[str]:
-    output = _capture(
-        ["git", "-C", str(repo_root), "status", "--porcelain", "--untracked-files=all"],
-        allow_failure=True,
-    )
-    if not output:
-        return []
-    paths: list[str] = []
-    for line in output.splitlines():
-        entry = line[3:]
-        if " -> " in entry:
-            entry = entry.split(" -> ", 1)[1]
-        paths.append(entry)
-    return paths
-
-
-def _current_branch(repo_root: Path) -> str:
-    return _capture(
-        ["git", "-C", str(repo_root), "symbolic-ref", "--quiet", "--short", "HEAD"],
-        allow_failure=True,
-    )
-
-
-def _track_branch_ready(repo_root: Path) -> bool:
-    if not (repo_root / ".git").exists():
-        return True
-    branch = _current_branch(repo_root)
-    if branch == "main":
-        return True
-    display = branch or "detached HEAD"
-    print(f"self repo: skip track because current branch is {display}, not main")
-    return False
-
-
-def _pull_self_repo_if_safe(repo_root: Path) -> None:
-    if not (repo_root / ".git").exists():
-        return
-    if not _track_branch_ready(repo_root):
-        return
-    paths = _git_status_paths(repo_root)
-    allowed = {str(MANIFEST_REL_PATH)}
-    if any(path not in allowed for path in paths):
-        print("self repo: skip pull because unrelated local changes exist")
-        return
-    print("self repo: pull")
-    _run(["git", "-C", str(repo_root), "pull", "--ff-only", "origin", "main"])
-
-
-def maybe_commit_snapshot(repo_root: Path, auto_push: bool) -> bool:
-    if not (repo_root / ".git").exists():
-        return False
-    if not _track_branch_ready(repo_root):
-        return False
-    paths = _git_status_paths(repo_root)
-    if not paths:
-        return False
-    manifest_rel = str(MANIFEST_REL_PATH)
-    if any(path != manifest_rel for path in paths):
-        print("self repo: skip auto-commit because unrelated changes exist")
-        return False
-    _run(["git", "-C", str(repo_root), "add", manifest_rel])
-    _run(
-        [
-            "git",
-            "-C",
-            str(repo_root),
-            "commit",
-            "-m",
-            f"sync snapshot {datetime.now(timezone.utc).isoformat(timespec='seconds')}",
-        ]
-    )
-    if auto_push:
-        print("self repo: push origin main")
-        _run(["git", "-C", str(repo_root), "push", "origin", "main"])
-    return True
-
-
-def _load_state() -> dict[str, Any]:
-    target = state_path()
-    if not target.exists():
-        return {}
-    return json.loads(target.read_text(encoding="utf-8"))
-
-
-def _save_state(state: dict[str, Any]) -> None:
-    target = state_path()
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-
-
-def apply_saved_snapshot(repo_root: Path, home_dir: Path) -> None:
-    manifest = load_manifest(repo_root)
-    apply_manifest(manifest, home_dir)
-
-
 def run_track_once(
-    repo_root: Path,
+    config: InstallerConfig,
     home_dir: Path,
-    *,
-    auto_commit: bool,
-    auto_push: bool,
 ) -> bool:
-    if not _track_branch_ready(repo_root):
-        return False
-    _pull_self_repo_if_safe(repo_root)
-    changed = sync_snapshot(repo_root, home_dir)
-    if changed and auto_commit:
-        maybe_commit_snapshot(repo_root, auto_push=auto_push)
+    runtime_env = _load_home_shell_env(home_dir)
+    manifest = capture_manifest(home_dir)
+    spec, changed = sync_manifest(
+        config,
+        manifest,
+        runtime_env,
+        allow_web_login=False,
+    )
+    print(f"state repo: {spec.slug}")
+    if changed:
+        print(f"state manifest: updated {spec.manifest_path}")
+    else:
+        print(f"state manifest: unchanged {spec.manifest_path}")
     return changed
-
-
-def run_tick(config: InstallerConfig, source_root: Path, home_dir: Path | None = None) -> None:
-    home_dir = Path.home() if home_dir is None else home_dir
-    repo_root = resolve_repo_root(config.paths.repo_root, source_root)
-
-    if config.daemon.mode == "source":
-        run_track_once(
-            repo_root,
-            home_dir,
-            auto_commit=config.daemon.auto_commit,
-            auto_push=config.daemon.auto_push,
-        )
-        return
-
-    if config.daemon.mode == "follower":
-        _pull_self_repo_if_safe(repo_root)
-        if not config.daemon.auto_apply:
-            return
-        manifest = load_manifest(repo_root)
-        digest = manifest_digest(manifest)
-        state = _load_state()
-        if state.get("last_applied_digest") == digest:
-            print("snapshot already applied")
-            return
-        apply_manifest(manifest, home_dir)
-        state["last_applied_digest"] = digest
-        state["last_applied_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        _save_state(state)
-        return
-
-    raise OperationError(f"Unsupported daemon mode: {config.daemon.mode}")

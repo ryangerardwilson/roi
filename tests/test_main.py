@@ -38,11 +38,12 @@ class MainContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout.strip(), "0.0.0")
 
-    def test_help_mentions_init_and_track(self):
+    def test_help_mentions_init_track_and_install(self):
         result = run_app("-h")
         self.assertEqual(result.returncode, 0)
         self.assertIn("roi init", result.stdout)
         self.assertIn("roi track", result.stdout)
+        self.assertIn("roi install", result.stdout)
 
     def test_conf_seeds_config(self):
         with tempfile.TemporaryDirectory() as temp_dir:
