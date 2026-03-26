@@ -75,7 +75,7 @@ class MainContractTests(unittest.TestCase):
             )
             (snapshot_dir / "system_manifest.json").write_text(
                 "{\n"
-                '  "active_theme": "mono-dark",\n'
+                '  "active_theme": "rgwos",\n'
                 '  "generated_at": "2026-03-25T00:00:00+00:00",\n'
                 '  "packages": {"explicit": ["git"]},\n'
                 '  "repos": {"Apps": [], "Libs": [], "Work": []},\n'
@@ -88,7 +88,7 @@ class MainContractTests(unittest.TestCase):
             result = run_app("show", env={"XDG_CONFIG_HOME": str(config_home)})
 
             self.assertEqual(result.returncode, 0)
-            self.assertIn("active theme: mono-dark", result.stdout)
+            self.assertIn("active theme: rgwos", result.stdout)
 
 
 if __name__ == "__main__":

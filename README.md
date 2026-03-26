@@ -5,7 +5,7 @@
 The managed state covers:
 
 - the git repo rooted at `~`
-- the six custom Omarchy theme repos and the active theme
+- the `rgwos` Omarchy theme repo and its activation
 - the required top-level directories
 - repo inventories under `~/Apps`, `~/Libs`, and `~/Work`
 - explicitly installed packages
@@ -110,7 +110,7 @@ roi install
 Once the manifest is loaded, ROI applies it in this order:
 
 1. sync the home repo at `~`
-2. install the Omarchy theme repos and activate the saved `active_theme`
+2. install the `rgwos` Omarchy theme repo and activate `rgwos`
 3. ensure `~/Work`, `~/Infra`, `~/Music`, `~/Apps`, and `~/Libs`
 4. clone or pull repos under `~/Apps`, `~/Libs`, and `~/Work`, then run `install.sh -u` for app repos that ship an installer
 5. install and update the explicit package set

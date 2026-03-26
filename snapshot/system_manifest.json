@@ -1,5 +1,5 @@
 {
-  "active_theme": "",
+  "active_theme": "rgwos",
   "generated_at": "1970-01-01T00:00:00+00:00",
   "home_repo": {
     "branch": "main",
@@ -25,5 +25,11 @@
   ],
   "schema_version": 1,
   "source_hostname": "example-host",
-  "themes": []
+  "themes": [
+    {
+      "branch": "main",
+      "name": "rgwos",
+      "remote_url": "https://github.com/example/rgwos.git"
+    }
+  ]
 }

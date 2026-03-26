@@ -13,6 +13,7 @@ APP_NAME = "roi"
 MANIFEST_REL_PATH = Path("snapshot/system_manifest.json")
 MANAGED_DIR_NAMES = ("Work", "Infra", "Music", "Apps", "Libs")
 REPO_GROUPS = ("Apps", "Libs", "Work")
+MANAGED_THEME_NAME = "rgwos"
 
 
 class ManifestError(RuntimeError):
@@ -109,32 +110,31 @@ def discover_theme_specs(home_dir: Path) -> list[dict[str, Any]]:
     themes_root = home_dir / ".config" / "omarchy" / "themes"
     if not themes_root.exists():
         return []
-    specs: list[dict[str, Any]] = []
-    for child in sorted(themes_root.iterdir(), key=lambda item: item.name):
-        if not child.is_dir():
-            continue
-        spec = _repo_spec(
-            child,
-            f".config/omarchy/themes/{child.name}",
-            install_via_script=False,
-        )
-        if spec is None:
-            continue
-        specs.append(
-            {
-                "name": child.name,
-                "remote_url": spec["remote_url"],
-                "branch": spec["branch"],
-            }
-        )
-    return specs
+    child = themes_root / MANAGED_THEME_NAME
+    if not child.is_dir():
+        return []
+    spec = _repo_spec(
+        child,
+        f".config/omarchy/themes/{child.name}",
+        install_via_script=False,
+    )
+    if spec is None:
+        return []
+    return [
+        {
+            "name": child.name,
+            "remote_url": spec["remote_url"],
+            "branch": spec["branch"],
+        }
+    ]
 
 
 def read_active_theme_name(home_dir: Path) -> str:
     theme_name_path = home_dir / ".config" / "omarchy" / "current" / "theme.name"
     if not theme_name_path.exists():
         return ""
-    return theme_name_path.read_text(encoding="utf-8").strip()
+    theme_name = theme_name_path.read_text(encoding="utf-8").strip()
+    return theme_name if theme_name == MANAGED_THEME_NAME else ""
 
 
 def discover_packages() -> dict[str, Any]:
@@ -162,6 +162,7 @@ def capture_manifest(home_dir: Path) -> dict[str, Any]:
     home_repo = _repo_spec(home_dir, ".", install_via_script=False)
     if home_repo is None:
         raise ManifestError(f"{home_dir} is not a git repo with an origin remote.")
+    themes = discover_theme_specs(home_dir)
 
     return {
         "schema_version": 1,
@@ -172,8 +173,8 @@ def capture_manifest(home_dir: Path) -> dict[str, Any]:
             "remote_url": home_repo["remote_url"],
             "branch": home_repo["branch"],
         },
-        "themes": discover_theme_specs(home_dir),
-        "active_theme": read_active_theme_name(home_dir),
+        "themes": themes,
+        "active_theme": MANAGED_THEME_NAME if themes else "",
         "repos": {
             group: discover_repo_specs(home_dir, group)
             for group in REPO_GROUPS

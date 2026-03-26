@@ -48,11 +48,11 @@ class ManifestCaptureTests(unittest.TestCase):
             work_repo = home_dir / "Work" / "workdemo"
             init_repo(work_repo, "https://github.com/example/workdemo.git")
 
-            theme_repo = home_dir / ".config" / "omarchy" / "themes" / "mono-dark"
-            init_repo(theme_repo, "https://github.com/example/mono-dark.git")
+            theme_repo = home_dir / ".config" / "omarchy" / "themes" / "rgwos"
+            init_repo(theme_repo, "https://github.com/example/rgwos.git")
             active_theme_path = home_dir / ".config" / "omarchy" / "current"
             active_theme_path.mkdir(parents=True, exist_ok=True)
-            (active_theme_path / "theme.name").write_text("mono-dark\n", encoding="utf-8")
+            (active_theme_path / "theme.name").write_text("rgwos\n", encoding="utf-8")
 
             with mock.patch(
                 "manifest.discover_packages",
@@ -61,7 +61,7 @@ class ManifestCaptureTests(unittest.TestCase):
                 manifest = capture_manifest(home_dir)
 
             self.assertEqual(manifest["home_repo"]["remote_url"], "https://github.com/example/home.git")
-            self.assertEqual(manifest["active_theme"], "mono-dark")
+            self.assertEqual(manifest["active_theme"], "rgwos")
             self.assertEqual(len(manifest["themes"]), 1)
             self.assertEqual(len(manifest["repos"]["Apps"]), 2)
             demo_spec = next(spec for spec in manifest["repos"]["Apps"] if spec["name"] == "demo")

@@ -176,7 +176,8 @@ def _ensure_omarchy_commands() -> tuple[str, str]:
 
 def _install_themes(manifest: dict[str, Any], env: dict[str, str] | None = None) -> None:
     install_cmd, set_cmd = _ensure_omarchy_commands()
-    for theme in manifest.get("themes", []):
+    themes = [theme for theme in manifest.get("themes", []) if str(theme.get("name", "")).strip() == "rgwos"]
+    for theme in themes:
         remote_url = str(theme.get("remote_url", "")).strip()
         if not remote_url:
             continue
@@ -184,6 +185,8 @@ def _install_themes(manifest: dict[str, Any], env: dict[str, str] | None = None)
         _run([install_cmd, remote_url], env=env)
 
     active_theme = str(manifest.get("active_theme", "")).strip()
+    if not active_theme and themes:
+        active_theme = "rgwos"
     if active_theme:
         print(f"theme {active_theme}: activate")
         _run([set_cmd, active_theme], env=env)

@@ -9,7 +9,7 @@
 - `roi` owns one job: capture this laptop's Omarchy workstation state and re-apply it on another Arch laptop.
 - Keep the managed state limited to:
   - the home-directory git repo
-  - the six repo-backed Omarchy themes and active theme
+  - the `rgwos` Omarchy theme repo and its activation
   - the required top-level directories
   - repo inventories under `~/Apps`, `~/Libs`, and `~/Work`
   - explicitly installed system packages
@@ -43,7 +43,7 @@
 ## Snapshot Review Rules
 - The managed snapshot should reflect:
   - the home repo rooted at `~`
-  - the six repo-backed Omarchy themes plus the active theme
+  - the `rgwos` Omarchy theme repo plus `active_theme = "rgwos"`
   - required top-level directories
   - repo inventories under `~/Apps`, `~/Libs`, and `~/Work`
   - explicitly installed packages
