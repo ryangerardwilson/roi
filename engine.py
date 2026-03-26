@@ -164,26 +164,27 @@ def _expand_home(path_value: str, home_dir: Path) -> Path:
     return Path(path_value.replace("$HOME", str(home_dir)))
 
 
-def _ensure_omarchy_commands() -> tuple[str, str]:
-    install_cmd = shutil.which("omarchy-theme-install")
+def _ensure_omarchy_commands() -> str:
     set_cmd = shutil.which("omarchy-theme-set")
-    if not install_cmd or not set_cmd:
+    if not set_cmd:
         raise OperationError(
-            "Expected omarchy-theme-install and omarchy-theme-set. Install the base Omarchy tooling first."
+            "Expected omarchy-theme-set. Install the base Omarchy tooling first."
         )
-    return install_cmd, set_cmd
+    return set_cmd
 
 
-def _install_themes(manifest: dict[str, Any], env: dict[str, str] | None = None) -> None:
-    install_cmd, set_cmd = _ensure_omarchy_commands()
+def _install_themes(manifest: dict[str, Any], home_dir: Path, env: dict[str, str] | None = None) -> None:
+    set_cmd = _ensure_omarchy_commands()
     themes = [theme for theme in manifest.get("themes", []) if str(theme.get("name", "")).strip() == "rgwos"]
     for theme in themes:
+        theme_name = str(theme.get("name", "")).strip()
         remote_url = str(theme.get("remote_url", "")).strip()
-        if not remote_url:
+        branch = str(theme.get("branch", "main")).strip() or "main"
+        if not theme_name or not remote_url:
             continue
-        print(f"theme {theme['name']}: install")
-        _run([install_cmd, remote_url], env=env)
-
+        target = home_dir / ".config" / "omarchy" / "themes" / theme_name
+        print(f"theme {theme_name}: sync")
+        _pull_checkout(target, remote_url, branch, env=env)
     active_theme = str(manifest.get("active_theme", "")).strip()
     if not active_theme and themes:
         active_theme = "rgwos"
@@ -257,7 +258,7 @@ def apply_manifest(manifest: dict[str, Any], home_dir: Path) -> None:
     print("home repo: sync")
     _bootstrap_home_repo(home_dir, remote_url, branch, env=bootstrap_env)
     runtime_env = _load_home_shell_env(home_dir)
-    _install_themes(manifest, env=runtime_env)
+    _install_themes(manifest, home_dir, env=runtime_env)
     _ensure_required_dirs(manifest, home_dir)
     for group in ("Apps", "Libs", "Work"):
         _sync_repo_group(manifest, home_dir, group, env=runtime_env)

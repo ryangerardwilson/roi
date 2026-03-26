@@ -32,7 +32,7 @@ class EngineBootstrapTests(unittest.TestCase):
             engine.apply_manifest(manifest, home_dir)
 
         self.assertEqual(events[:3], ["auth", "home", "env"])
-        install_themes.assert_called_once_with(manifest, env=runtime_env)
+        install_themes.assert_called_once_with(manifest, home_dir, env=runtime_env)
         ensure_dirs.assert_called_once_with(manifest, home_dir)
         self.assertEqual(sync_repo_group.call_count, 3)
         sync_repo_group.assert_any_call(manifest, home_dir, "Apps", env=runtime_env)
@@ -114,6 +114,35 @@ class EngineBootstrapTests(unittest.TestCase):
                 mock.call(["gh", "auth", "setup-git"], env=mock.ANY),
             ]
         )
+
+    def test_install_themes_syncs_manifest_name_then_activates_it(self):
+        manifest = {
+            "themes": [
+                {
+                    "name": "rgwos",
+                    "remote_url": "https://github.com/ryangerardwilson/omarchy-mono-dark-theme.git",
+                    "branch": "main",
+                }
+            ],
+            "active_theme": "rgwos",
+        }
+        home_dir = Path("/tmp/test-home")
+        env = {"HOME": str(home_dir)}
+
+        with (
+            mock.patch("engine._ensure_omarchy_commands", return_value="/usr/bin/omarchy-theme-set"),
+            mock.patch("engine._pull_checkout") as pull_checkout,
+            mock.patch("engine._run") as run,
+        ):
+            engine._install_themes(manifest, home_dir, env=env)
+
+        pull_checkout.assert_called_once_with(
+            home_dir / ".config" / "omarchy" / "themes" / "rgwos",
+            "https://github.com/ryangerardwilson/omarchy-mono-dark-theme.git",
+            "main",
+            env=env,
+        )
+        run.assert_called_once_with(["/usr/bin/omarchy-theme-set", "rgwos"], env=env)
 
     def test_run_track_once_syncs_remote_state(self):
         config = mock.Mock()
