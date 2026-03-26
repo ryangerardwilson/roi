@@ -216,7 +216,11 @@ def _sync_repo_group(manifest: dict[str, Any], home_dir: Path, group: str, env: 
             install_script = target / "install.sh"
             if install_script.exists():
                 print(f"repo {relative_path}: install")
-                _run(["/usr/bin/bash", str(install_script), "-u"], cwd=target, env=env)
+                installer_text = install_script.read_text(encoding="utf-8", errors="ignore")
+                if "extract_source()" in installer_text and "[[ -d \"$src_path\" ]]" in installer_text:
+                    _run(["/usr/bin/bash", str(install_script), "-b", str(target), "-n"], cwd=target, env=env)
+                else:
+                    _run(["/usr/bin/bash", str(install_script), "-u"], cwd=target, env=env)
 
 
 def _sync_packages(manifest: dict[str, Any], env: dict[str, str] | None = None) -> None:
@@ -246,6 +250,29 @@ def _sync_packages(manifest: dict[str, Any], env: dict[str, str] | None = None) 
     _run(command, env=env)
 
 
+def _manifest_has_package(manifest: dict[str, Any], package_name: str) -> bool:
+    packages = manifest.get("packages", {})
+    for key in ("explicit", "official", "foreign"):
+        if package_name in packages.get(key, []):
+            return True
+    return False
+
+
+def _apply_keyd_km_special_cases(manifest: dict[str, Any], home_dir: Path, env: dict[str, str] | None = None) -> None:
+    if _manifest_has_package(manifest, "keyd"):
+        print("keyd: enable service")
+        _run(["sudo", "systemctl", "enable", "--now", "keyd.service"], env=env)
+
+    km_launcher = home_dir / ".local" / "bin" / "km"
+    km_main = home_dir / "Apps" / "km" / "main.py"
+    if km_launcher.exists():
+        print("km: apply")
+        _run([str(km_launcher), "apply"], env=env)
+    elif km_main.exists():
+        print("km: apply")
+        _run(["/usr/bin/python3", str(km_main), "apply"], cwd=km_main.parent, env=env)
+
+
 def apply_manifest(manifest: dict[str, Any], home_dir: Path) -> None:
     home_repo = manifest.get("home_repo", {})
     remote_url = str(home_repo.get("remote_url", "")).strip()
@@ -258,11 +285,12 @@ def apply_manifest(manifest: dict[str, Any], home_dir: Path) -> None:
     print("home repo: sync")
     _bootstrap_home_repo(home_dir, remote_url, branch, env=bootstrap_env)
     runtime_env = _load_home_shell_env(home_dir)
-    _install_themes(manifest, home_dir, env=runtime_env)
     _ensure_required_dirs(manifest, home_dir)
+    _sync_packages(manifest, env=runtime_env)
+    _install_themes(manifest, home_dir, env=runtime_env)
     for group in ("Apps", "Libs", "Work"):
         _sync_repo_group(manifest, home_dir, group, env=runtime_env)
-    _sync_packages(manifest, env=runtime_env)
+    _apply_keyd_km_special_cases(manifest, home_dir, env=runtime_env)
 
 
 def initialize_state_repo(config: InstallerConfig, home_dir: Path) -> bool:

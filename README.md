@@ -103,17 +103,17 @@ roi install
 2. download `system_manifest.json` from the authenticated user's private `roi_state` repo
 3. sync the home repo at `~`
 4. source `~/.bashrc` from the freshly synced home repo for the remaining apply steps
-5. install themes, repos, required directories, and packages
+5. ensure required directories, install packages, install themes, and then sync repos
 
 ## Apply Order
 
 Once the manifest is loaded, ROI applies it in this order:
 
 1. sync the home repo at `~`
-2. install the `rgwos` Omarchy theme repo and activate `rgwos`
-3. ensure `~/Work`, `~/Infra`, `~/Music`, `~/Apps`, and `~/Libs`
-4. clone or pull repos under `~/Apps`, `~/Libs`, and `~/Work`, then run `install.sh -u` for app repos that ship an installer
-5. install and update the explicit package set
+2. ensure `~/Work`, `~/Infra`, `~/Music`, `~/Apps`, and `~/Libs`
+3. install and update the explicit package set
+4. install the `rgwos` Omarchy theme repo and activate `rgwos`
+5. clone or pull repos under `~/Apps`, `~/Libs`, and `~/Work`, then run `install.sh -u` for app repos that ship an installer
 
 ## Release Path
 

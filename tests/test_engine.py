@@ -24,14 +24,18 @@ class EngineBootstrapTests(unittest.TestCase):
             mock.patch("engine._ensure_github_auth", side_effect=lambda *args, **kwargs: events.append("auth")),
             mock.patch("engine._bootstrap_home_repo", side_effect=lambda *args, **kwargs: events.append("home")),
             mock.patch("engine._load_home_shell_env", side_effect=lambda *args, **kwargs: events.append("env") or runtime_env),
-            mock.patch("engine._install_themes") as install_themes,
-            mock.patch("engine._ensure_required_dirs") as ensure_dirs,
-            mock.patch("engine._sync_repo_group") as sync_repo_group,
-            mock.patch("engine._sync_packages") as sync_packages,
+            mock.patch("engine._install_themes", side_effect=lambda *args, **kwargs: events.append("themes")) as install_themes,
+            mock.patch("engine._ensure_required_dirs", side_effect=lambda *args, **kwargs: events.append("dirs")) as ensure_dirs,
+            mock.patch("engine._sync_repo_group", side_effect=lambda *args, **kwargs: events.append(f"repo:{args[2]}")) as sync_repo_group,
+            mock.patch("engine._sync_packages", side_effect=lambda *args, **kwargs: events.append("packages")) as sync_packages,
+            mock.patch("engine._apply_keyd_km_special_cases", side_effect=lambda *args, **kwargs: events.append("special")) as apply_specials,
         ):
             engine.apply_manifest(manifest, home_dir)
 
-        self.assertEqual(events[:3], ["auth", "home", "env"])
+        self.assertEqual(
+            events,
+            ["auth", "home", "env", "dirs", "packages", "themes", "repo:Apps", "repo:Libs", "repo:Work", "special"],
+        )
         install_themes.assert_called_once_with(manifest, home_dir, env=runtime_env)
         ensure_dirs.assert_called_once_with(manifest, home_dir)
         self.assertEqual(sync_repo_group.call_count, 3)
@@ -39,6 +43,7 @@ class EngineBootstrapTests(unittest.TestCase):
         sync_repo_group.assert_any_call(manifest, home_dir, "Libs", env=runtime_env)
         sync_repo_group.assert_any_call(manifest, home_dir, "Work", env=runtime_env)
         sync_packages.assert_called_once_with(manifest, env=runtime_env)
+        apply_specials.assert_called_once_with(manifest, home_dir, env=runtime_env)
 
     def test_initialize_state_repo_loads_shell_env_and_syncs_remote_state(self):
         config = mock.Mock()
@@ -143,6 +148,22 @@ class EngineBootstrapTests(unittest.TestCase):
             env=env,
         )
         run.assert_called_once_with(["/usr/bin/omarchy-theme-set", "rgwos"], env=env)
+
+    def test_apply_keyd_km_special_cases_enables_service_and_runs_km(self):
+        manifest = {"packages": {"explicit": ["keyd"], "official": [], "foreign": []}}
+        home_dir = Path("/tmp/test-home")
+        env = {"HOME": str(home_dir)}
+
+        with (
+            mock.patch("engine._run") as run,
+            mock.patch("pathlib.Path.exists", autospec=True, side_effect=lambda path: str(path) in {
+                str(home_dir / ".local" / "bin" / "km"),
+            }),
+        ):
+            engine._apply_keyd_km_special_cases(manifest, home_dir, env=env)
+
+        run.assert_any_call(["sudo", "systemctl", "enable", "--now", "keyd.service"], env=env)
+        run.assert_any_call([str(home_dir / ".local" / "bin" / "km"), "apply"], env=env)
 
     def test_run_track_once_syncs_remote_state(self):
         config = mock.Mock()
