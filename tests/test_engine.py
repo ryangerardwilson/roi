@@ -51,12 +51,32 @@ class EngineBootstrapTests(unittest.TestCase):
             mock.patch("engine._load_home_shell_env", return_value=runtime_env),
             mock.patch("engine.capture_manifest", return_value=manifest) as capture_manifest,
             mock.patch("engine.sync_manifest", return_value=(spec, True)) as sync_manifest,
+            mock.patch("engine.notify_snapshot_synced") as notify_snapshot_synced,
         ):
             changed = engine.initialize_state_repo(config, home_dir)
 
         self.assertTrue(changed)
         capture_manifest.assert_called_once_with(home_dir)
         sync_manifest.assert_called_once_with(config, manifest, runtime_env, allow_web_login=True)
+        notify_snapshot_synced.assert_called_once_with("example/roi_state")
+
+    def test_initialize_state_repo_skips_notification_when_manifest_is_unchanged(self):
+        config = mock.Mock()
+        home_dir = Path("/tmp/test-home")
+        runtime_env = {"HOME": str(home_dir), "GH_TOKEN": "from-bashrc"}
+        manifest = {"schema_version": 1}
+        spec = mock.Mock(slug="example/roi_state", manifest_path="system_manifest.json")
+
+        with (
+            mock.patch("engine._load_home_shell_env", return_value=runtime_env),
+            mock.patch("engine.capture_manifest", return_value=manifest),
+            mock.patch("engine.sync_manifest", return_value=(spec, False)),
+            mock.patch("engine.notify_snapshot_synced") as notify_snapshot_synced,
+        ):
+            changed = engine.initialize_state_repo(config, home_dir)
+
+        self.assertFalse(changed)
+        notify_snapshot_synced.assert_not_called()
 
     def test_install_from_state_repo_downloads_then_applies(self):
         config = mock.Mock()
@@ -105,12 +125,31 @@ class EngineBootstrapTests(unittest.TestCase):
             mock.patch("engine._load_home_shell_env", return_value=runtime_env),
             mock.patch("engine.capture_manifest", return_value=manifest) as capture_manifest,
             mock.patch("engine.sync_manifest", return_value=(spec, True)) as sync_manifest,
+            mock.patch("engine.notify_snapshot_synced") as notify_snapshot_synced,
         ):
             changed = engine.run_track_once(config, home_dir)
 
         self.assertTrue(changed)
         capture_manifest.assert_called_once_with(home_dir)
         sync_manifest.assert_called_once_with(config, manifest, runtime_env, allow_web_login=False)
+        notify_snapshot_synced.assert_called_once_with("example/roi_state")
+
+    def test_run_track_once_skips_notification_when_manifest_is_unchanged(self):
+        config = mock.Mock()
+        home_dir = Path("/tmp/home")
+        runtime_env = {"HOME": str(home_dir), "GH_TOKEN": "from-bashrc"}
+        manifest = {"schema_version": 1}
+        spec = mock.Mock(slug="example/roi_state", manifest_path="system_manifest.json")
+        with (
+            mock.patch("engine._load_home_shell_env", return_value=runtime_env),
+            mock.patch("engine.capture_manifest", return_value=manifest),
+            mock.patch("engine.sync_manifest", return_value=(spec, False)),
+            mock.patch("engine.notify_snapshot_synced") as notify_snapshot_synced,
+        ):
+            changed = engine.run_track_once(config, home_dir)
+
+        self.assertFalse(changed)
+        notify_snapshot_synced.assert_not_called()
 
 
 if __name__ == "__main__":

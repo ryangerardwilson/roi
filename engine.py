@@ -9,6 +9,7 @@ from typing import Any
 
 from config import APP_NAME, InstallerConfig
 from manifest import MANIFEST_REL_PATH, capture_manifest, save_manifest
+from notifications import notify_snapshot_synced
 from state_repo import read_remote_manifest, sync_manifest
 
 
@@ -272,6 +273,7 @@ def initialize_state_repo(config: InstallerConfig, home_dir: Path) -> bool:
     print(f"state repo: {spec.slug}")
     if changed:
         print(f"state manifest: updated {spec.manifest_path}")
+        notify_snapshot_synced(spec.slug)
     else:
         print(f"state manifest: unchanged {spec.manifest_path}")
     return changed
@@ -312,6 +314,7 @@ def run_track_once(
     print(f"state repo: {spec.slug}")
     if changed:
         print(f"state manifest: updated {spec.manifest_path}")
+        notify_snapshot_synced(spec.slug)
     else:
         print(f"state manifest: unchanged {spec.manifest_path}")
     return changed

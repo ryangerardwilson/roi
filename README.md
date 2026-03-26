@@ -62,6 +62,7 @@ The user config lives at `~/.config/roi/config.toml`.
 
 - `init` creates or confirms the private `roi_state` repo for the authenticated GitHub account, then uploads the current machine manifest there.
 - `track` installs and enables a `systemd --user` daily timer, then immediately syncs the current machine manifest to `roi_state`.
+- When `init` or the background `track` run writes a new manifest to `roi_state`, ROI sends a short `notify-send` desktop notification that appears through Mako.
 - `install` starts GitHub web auth when needed, downloads the manifest from `roi_state`, and applies it to the current machine.
 
 Default state repo config:
