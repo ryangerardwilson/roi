@@ -3,12 +3,19 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from unittest import mock
 import unittest
 
 
 APP_ROOT = Path(__file__).resolve().parents[1]
 MAIN = APP_ROOT / "main.py"
 CONTRACT_SRC = Path.home() / "Libs" / "rgw_cli_contract" / "src"
+if str(CONTRACT_SRC) not in sys.path:
+    sys.path.insert(0, str(CONTRACT_SRC))
+if str(APP_ROOT) not in sys.path:
+    sys.path.insert(0, str(APP_ROOT))
+
+import main as roi_main
 
 
 def run_app(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -43,7 +50,20 @@ class MainContractTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("roi init", result.stdout)
         self.assertIn("roi track", result.stdout)
+        self.assertIn("roi track -s", result.stdout)
         self.assertIn("roi install", result.stdout)
+
+    def test_track_stop_dispatches_to_service_stop(self):
+        with (
+            mock.patch("main.load_config") as load_config,
+            mock.patch("main.resolve_repo_root", return_value=APP_ROOT),
+            mock.patch("main.stop_track_timer") as stop_track_timer,
+        ):
+            load_config.return_value = mock.Mock(paths=mock.Mock(repo_root=APP_ROOT))
+            rc = roi_main._dispatch(["track", "-s"])
+
+        self.assertEqual(rc, 0)
+        stop_track_timer.assert_called_once_with()
 
     def test_conf_seeds_config(self):
         with tempfile.TemporaryDirectory() as temp_dir:

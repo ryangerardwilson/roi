@@ -9,7 +9,7 @@ from config import CONFIG_TEXT, config_path, load_config
 from engine import OperationError, initialize_state_repo, install_from_state_repo, resolve_repo_root, run_track_once, sync_snapshot
 from manifest import ManifestError, load_manifest, summarize_manifest
 from rgw_cli_contract import AppSpec, resolve_install_script_path, run_app
-from service import ServiceError, enable_track_timer, install_track_units, start_track_service
+from service import ServiceError, enable_track_timer, install_track_units, start_track_service, stop_track_timer
 from state_repo import StateRepoError
 
 
@@ -32,8 +32,9 @@ features:
   roi init
 
   keep roi_state updated once per day in the background
-  # roi track
+  # roi track|-s
   roi track
+  roi track -s
 
   install this machine from roi_state
   # roi install
@@ -80,6 +81,10 @@ def _dispatch(argv: list[str]) -> int:
         print(timer_path)
         return 0
 
+    if argv == ["track", "-s"]:
+        stop_track_timer()
+        return 0
+
     if argv == ["__track_once__"] or argv == ["tick"]:
         run_track_once(config, Path.home())
         return 0
@@ -92,7 +97,7 @@ def _dispatch(argv: list[str]) -> int:
         sync_snapshot(repo_root, Path.home())
         return 0
 
-    raise UsageError("Usage: roi init|track|install")
+    raise UsageError("Usage: roi init|track [-s]|install")
 
 
 def main(argv: list[str] | None = None) -> int:

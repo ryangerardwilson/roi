@@ -70,3 +70,7 @@ def enable_track_timer() -> None:
 
 def start_track_service() -> None:
     _run(["systemctl", "--user", "start", TRACK_SERVICE_NAME])
+
+
+def stop_track_timer() -> None:
+    _run(["systemctl", "--user", "disable", "--now", TRACK_TIMER_NAME])

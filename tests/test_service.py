@@ -32,6 +32,12 @@ class TrackTimerTests(unittest.TestCase):
             self.assertTrue(timer_path.exists())
             run_command.assert_called_once_with(["systemctl", "--user", "daemon-reload"])
 
+    def test_stop_track_timer_disables_timer(self):
+        with mock.patch("service._run") as run_command:
+            service.stop_track_timer()
+
+        run_command.assert_called_once_with(["systemctl", "--user", "disable", "--now", service.TRACK_TIMER_NAME])
+
 
 if __name__ == "__main__":
     unittest.main()
